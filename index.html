@@ -1,0 +1,1216 @@
+
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Udhaar Manager</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;
+--success:#16a34a;--success-light:#dcfce7;
+--warning:#ea580c;--warning-light:#fff7ed;
+--danger:#dc2626;--danger-light:#fef2f2;
+--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;
+--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;
+--gray-800:#1f2937;--gray-900:#111827;
+--bg:#f1f5f9;--card:#fff;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.1);
+--shadow-lg:0 4px 12px rgba(0,0,0,.12);
+}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--gray-800);line-height:1.5;min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:inherit;font-size:1rem;outline:none}
+.app-container{max-width:900px;margin:0 auto;padding-bottom:80px}
+/* Header */
+.header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:1.25rem;font-weight:700;letter-spacing:-.3px}
+.header .subtitle{font-size:.75rem;opacity:.8;margin-top:2px}
+.header-actions{display:flex;gap:8px}
+.header-actions button{background:rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:1rem;transition:background .2s}
+.header-actions button:hover{background:rgba(255,255,255,.3)}
+/* Search bar */
+.search-bar{margin-top:12px;display:none}
+.search-bar.active{display:flex}
+.search-bar input{flex:1;padding:10px 14px;border-radius:8px;border:none;font-size:.95rem;background:rgba(255,255,255,.95);color:var(--gray-800)}
+.search-bar input::placeholder{color:var(--gray-400)}
+/* Dashboard cards */
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px 20px}
+.summary-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.summary-card .label{font-size:.75rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.summary-card .value{font-size:1.35rem;font-weight:700;margin-top:4px;color:var(--gray-900)}
+.summary-card.outstanding .value{color:var(--danger)}
+.summary-card.pending .value{color:var(--warning)}
+.summary-card.partpaid .value{color:var(--primary)}
+.summary-card.customers .value{color:var(--success)}
+/* Section */
+.section{padding:0 20px;margin-bottom:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:1rem;font-weight:700;color:var(--gray-800)}
+/* Filters */
+.filters{display:flex;gap:8px;overflow-x:auto;padding:0 20px 12px;-ms-overflow-style:none;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:600;white-space:nowrap;background:var(--card);color:var(--gray-600);border:1px solid var(--gray-200);transition:all .2s}
+.filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* Transaction cards */
+.tx-list{display:flex;flex-direction:column;gap:10px}
+.tx-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s;border-left:4px solid var(--gray-200)}
+.tx-card:hover{box-shadow:var(--shadow-lg)}
+.tx-card.status-pending{border-left-color:var(--warning)}
+.tx-card.status-partpaid{border-left-color:var(--primary)}
+.tx-card.status-paid{border-left-color:var(--success)}
+.tx-card .tx-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.tx-card .tx-name{font-weight:600;font-size:.95rem;color:var(--gray-800)}
+.tx-card .tx-amount{font-weight:700;font-size:1rem}
+.tx-card .tx-bottom{display:flex;justify-content:space-between;align-items:center}
+.tx-card .tx-meta{font-size:.78rem;color:var(--gray-500)}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.badge-pending{background:var(--warning-light);color:var(--warning)}
+.badge-partpaid{background:var(--primary-light);color:var(--primary)}
+.badge-paid{background:var(--success-light);color:var(--success)}
+.badge-overdue{background:var(--danger-light);color:var(--danger)}
+/* FAB */
+.fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;font-size:1.8rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,99,235,.4);z-index:90;transition:transform .2s}
+.fab:hover{transform:scale(1.08)}
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;padding:0;transform:translateY(30px);transition:transform .25s}
+.modal-overlay.active .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0;position:sticky;top:0;background:var(--card);z-index:1}
+.modal-header h2{font-size:1.1rem;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--gray-600)}
+.modal-body{padding:16px 20px 24px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.82rem;font-weight:600;color:var(--gray-600);margin-bottom:6px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:12px 14px;border:1.5px solid var(--gray-200);border-radius:10px;font-size:1rem;transition:border-color .2s;background:#fff}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--primary)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-group .hint{font-size:.75rem;color:var(--gray-400);margin-top:4px}
+.btn{padding:12px 24px;border-radius:10px;font-size:.95rem;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;color:var(--gray-600);border:1.5px solid var(--gray-200)}
+.btn-outline:hover{border-color:var(--gray-400)}
+.btn-block{width:100%;display:flex}
+.btn-sm{padding:8px 14px;font-size:.82rem}
+/* Customer detail */
+.customer-view{display:none}
+.customer-view.active{display:block}
+.customer-header{padding:20px;background:var(--card);border-radius:0 0 var(--radius) var(--radius);margin-bottom:16px;box-shadow:var(--shadow)}
+.customer-header .cname{font-size:1.3rem;font-weight:700}
+.customer-header .cmobile{font-size:.85rem;color:var(--gray-500);margin-top:2px}
+.customer-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.cstat{text-align:center}
+.cstat .cstat-val{font-size:1.15rem;font-weight:700}
+.cstat .cstat-label{font-size:.72rem;color:var(--gray-500);text-transform:uppercase}
+.cstat.credit .cstat-val{color:var(--gray-800)}
+.cstat.paid .cstat-val{color:var(--success)}
+.cstat.outstanding .cstat-val{color:var(--danger)}
+/* Payment history */
+.payment-item{background:var(--gray-50);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.payment-item .p-amount{font-weight:700;color:var(--success)}
+.payment-item .p-date{font-size:.8rem;color:var(--gray-500)}
+.payment-item .p-note{font-size:.78rem;color:var(--gray-400);margin-top:2px}
+/* Empty state */
+.empty-state{text-align:center;padding:48px 20px}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:12px;opacity:.3}
+.empty-state h3{font-size:1.05rem;color:var(--gray-600);margin-bottom:6px}
+.empty-state p{font-size:.85rem;color:var(--gray-400);margin-bottom:20px}
+/* Toast */
+.toast-container{position:fixed;top:16px;right:16px;z-index:500;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--gray-800);color:#fff;padding:12px 20px;border-radius:10px;font-size:.88rem;font-weight:500;box-shadow:var(--shadow-lg);opacity:0;transform:translateX(40px);transition:all .3s;pointer-events:all;max-width:320px}
+.toast.show{opacity:1;transform:translateX(0)}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--gray-200);display:flex;justify-content:center;z-index:95;padding:0;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav .nav-inner{display:flex;max-width:520px;width:100%}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;font-size:.65rem;font-weight:600;color:var(--gray-400);transition:color .2s;background:transparent;gap:2px}
+.nav-btn.active{color:var(--primary)}
+.nav-btn .nav-icon{font-size:1.2rem}
+/* Confirm dialog */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.confirm-overlay.active{opacity:1;pointer-events:all}
+.confirm-box{background:var(--card);border-radius:16px;padding:24px;max-width:360px;width:90%;box-shadow:var(--shadow-lg)}
+.confirm-box h3{font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.confirm-box p{font-size:.9rem;color:var(--gray-600);margin-bottom:20px;line-height:1.5}
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+/* Duplicate warning */
+.dup-warning{background:var(--warning-light);border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:none}
+.dup-warning.show{display:block}
+.dup-warning p{font-size:.88rem;color:var(--warning);margin-bottom:10px;line-height:1.5}
+.dup-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* Settings view */
+.settings-group{background:var(--card);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.settings-item{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background .15s}
+.settings-item:last-child{border-bottom:none}
+.settings-item:hover{background:var(--gray-50)}
+.settings-item .si-label{font-size:.92rem;font-weight:500}
+.settings-item .si-icon{color:var(--gray-400);font-size:1rem}
+.settings-item.danger .si-label{color:var(--danger)}
+/* TX detail in modal */
+.detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)}
+.detail-row:last-child{border-bottom:none}
+.detail-row .dr-label{font-size:.85rem;color:var(--gray-500)}
+.detail-row .dr-value{font-size:.92rem;font-weight:600;text-align:right}
+/* Autocomplete */
+.autocomplete-list{background:var(--card);border:1px solid var(--gray-200);border-radius:8px;max-height:160px;overflow-y:auto;position:absolute;left:0;right:0;z-index:10;box-shadow:var(--shadow-lg);display:none}
+.autocomplete-list.show{display:block}
+.autocomplete-item{padding:10px 14px;cursor:pointer;font-size:.9rem;border-bottom:1px solid var(--gray-100);transition:background .15s}
+.autocomplete-item:hover{background:var(--primary-light)}
+.autocomplete-item:last-child{border-bottom:none}
+.form-group{position:relative}
+
+/* Desktop */
+@media(min-width:640px){
+.summary{grid-template-columns:repeat(4,1fr)}
+.modal{border-radius:16px;max-height:85vh}
+.modal-overlay{align-items:center}
+.bottom-nav .nav-inner{max-width:420px}
+.fab{bottom:32px;right:calc(50% - 430px)}
+}
+@media(min-width:900px){
+.app-container{padding-bottom:20px}
+.bottom-nav{display:none}
+.header-nav-desktop{display:flex !important;gap:4px;margin-left:32px}
+.fab{bottom:32px}
+}
+.header-nav-desktop{display:none}
+.header-nav-desktop button{background:rgba(255,255,255,.15);color:#fff;border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:600}
+.header-nav-desktop button.active{background:rgba(255,255,255,.3)}
+.header-nav-desktop button:hover{background:rgba(255,255,255,.25)}
+/* Hide file input */
+.hidden-input{position:absolute;width:0;height:0;opacity:0;pointer-events:none}
+/* Scroll margin */
+.view-section{min-height:50vh}
+.tx-card .tx-actions{display:flex;gap:6px;margin-top:10px}
+.customer-list .tx-card{cursor:pointer}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="confirm-overlay" id="confirmOverlay">
+<div class="confirm-box" id="confirmBox">
+<h3 id="confirmTitle">Confirm</h3>
+<p id="confirmMsg">Are you sure?</p>
+<div class="confirm-actions">
+<button class="btn btn-outline btn-sm" id="confirmCancel">Cancel</button>
+<button class="btn btn-danger btn-sm" id="confirmOk">Confirm</button>
+</div>
+</div>
+</div>
+
+<header class="header">
+<div class="header-top">
+<div>
+<h1>&#8377; Udhaar Manager</h1>
+<div class="subtitle">Simple &bull; Private &bull; Offline</div>
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<nav class="header-nav-desktop" id="desktopNav">
+<button data-view="dashboard" class="active">Dashboard</button>
+<button data-view="customers">Customers</button>
+<button data-view="settings">Settings</button>
+</nav>
+<div class="header-actions">
+<button onclick="toggleSearch()" title="Search">&#128269;</button>
+<button onclick="doBackup()" title="Backup">&#128190;</button>
+<button onclick="document.getElementById('restoreFileInput').click()" title="Restore">&#128194;</button>
+<button onclick="switchView('settings')" title="Settings">&#9881;</button>
+</div>
+</div>
+</div>
+<div class="search-bar" id="searchBar">
+<input type="text" id="globalSearch" placeholder="Search customers, notes, IDs..." oninput="handleGlobalSearch(this.value)">
+</div>
+</header>
+<input type="file" accept=".json" class="hidden-input" id="restoreFileInput" onchange="handleRestoreFile(event)">
+
+<div class="app-container" id="appContainer">
+<!-- Dashboard View -->
+<div class="view-section" id="dashboardView">
+<div class="summary" id="summaryCards">
+<div class="summary-card outstanding"><div class="label">Total Outstanding</div><div class="value" id="totalOutstanding">&#8377;0</div></div>
+<div class="summary-card pending"><div class="label">Pending</div><div class="value" id="totalPending">&#8377;0</div></div>
+<div class="summary-card partpaid"><div class="label">Part Paid</div><div class="value" id="totalPartPaid">&#8377;0</div></div>
+<div class="summary-card customers"><div class="label">Customers</div><div class="value" id="totalCustomers">0</div></div>
+</div>
+<div class="filters" id="filtersBar">
+<button class="filter-btn active" data-filter="all">All</button>
+<button class="filter-btn" data-filter="pending">Pending</button>
+<button class="filter-btn" data-filter="partpaid">Part Paid</button>
+<button class="filter-btn" data-filter="paid">Paid</button>
+<button class="filter-btn" data-filter="duetoday">Due Today</button>
+<button class="filter-btn" data-filter="overdue">Overdue</button>
+</div>
+<div class="section">
+<div class="section-header">
+<div class="section-title" id="listTitle">Recent Udhaar</div>
+</div>
+<div class="tx-list" id="txList"></div>
+</div>
+</div>
+
+<!-- Customers View -->
+<div class="view-section" id="customersView" style="display:none">
+<div class="section" style="padding-top:16px">
+<div class="section-header">
+<div class="section-title">All Customers</div>
+</div>
+<div style="margin-bottom:12px"><input type="text" id="customerSearchInput" placeholder="Search customers..." style="width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:10px;font-size:.95rem" oninput="renderCustomers(this.value)"></div>
+<div class="tx-list customer-list" id="customerList"></div>
+</div>
+</div>
+
+<!-- Customer Detail View -->
+<div class="view-section customer-view" id="customerDetailView">
+<div class="customer-header" id="customerHeader"></div>
+<div class="section" style="padding-top:4px">
+<div class="section-header">
+<div class="section-title">Transaction History</div>
+<button class="btn btn-primary btn-sm" onclick="openAddUdhaarForCustomer()">+ Add Udhaar</button>
+</div>
+<div class="tx-list" id="customerTxList"></div>
+</div>
+</div>
+
+<!-- Settings View -->
+<div class="view-section" id="settingsView" style="display:none">
+<div class="section" style="padding-top:16px">
+<div class="section-title" style="margin-bottom:16px">Settings</div>
+<div class="settings-group">
+<div class="settings-item" onclick="openBusinessNameModal()">
+<span class="si-label">Business Name</span><span class="si-icon" id="businessNameDisplay">Udhaar Manager</span>
+</div>
+<div class="settings-item"><span class="si-label">Currency</span><span class="si-icon">&#8377; INR</span></div>
+</div>
+<div class="settings-group">
+<div class="settings-item" onclick="doBackup()"><span class="si-label">Backup Data</span><span class="si-icon">&#128190;</span></div>
+<div class="settings-item" onclick="document.getElementById('restoreFileInput').click()"><span class="si-label">Restore Backup</span><span class="si-icon">&#128194;</span></div>
+<div class="settings-item" onclick="exportCSV()"><span class="si-label">Export CSV</span><span class="si-icon">&#128196;</span></div>
+</div>
+<div class="settings-group">
+<div class="settings-item danger" onclick="clearAllData()"><span class="si-label">Clear All Data</span><span class="si-icon">&#128465;</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<button class="fab" id="fabBtn" onclick="openAddUdhaar()">+</button>
+
+<nav class="bottom-nav">
+<div class="nav-inner">
+<button class="nav-btn active" data-view="dashboard"><span class="nav-icon">&#127968;</span>Home</button>
+<button class="nav-btn" data-view="customers"><span class="nav-icon">&#128101;</span>Customers</button>
+<button class="nav-btn" data-view="settings"><span class="nav-icon">&#9881;</span>Settings</button>
+</div>
+</nav>
+
+<!-- Add Udhaar Modal -->
+<div class="modal-overlay" id="addUdhaarModal">
+<div class="modal">
+<div class="modal-header"><h2>Add Udhaar</h2><button class="modal-close" onclick="closeModal('addUdhaarModal')">&times;</button></div>
+<div class="modal-body">
+<div class="dup-warning" id="dupWarning">
+<p id="dupWarningText"></p>
+<div class="dup-actions">
+<button class="btn btn-primary btn-sm" id="dupUseExisting" onclick="useDuplicateCustomer()">Use Existing</button>
+<button class="btn btn-outline btn-sm" onclick="createNewCustomer()">Create New</button>
+</div>
+</div>
+<div class="form-group">
+<label>Customer Name *</label>
+<input type="text" id="fCustName" placeholder="e.g. Ramesh Kirana" autocomplete="off" oninput="checkDuplicate(this.value)">
+<div class="autocomplete-list" id="custAutocomplete"></div>
+</div>
+<div class="form-group">
+<label>Mobile (optional)</label>
+<input type="tel" id="fCustMobile" placeholder="e.g. 9876543210">
+</div>
+<div class="form-group">
+<label>Amount (&#8377;) *</label>
+<input type="number" id="fAmount" placeholder="e.g. 2450" min="1" step="any">
+</div>
+<div class="form-group">
+<label>Due Date *</label>
+<input type="date" id="fDueDate">
+</div>
+<div class="form-group">
+<label>Note (optional)</label>
+<textarea id="fNote" placeholder="e.g. 2 cartons cooking oil"></textarea>
+</div>
+<button class="btn btn-primary btn-block" onclick="saveUdhaar()">Save Udhaar</button>
+</div>
+</div>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="modal-overlay" id="paymentModal">
+<div class="modal">
+<div class="modal-header"><h2>Record Payment</h2><button class="modal-close" onclick="closeModal('paymentModal')">&times;</button></div>
+<div class="modal-body">
+<div id="paymentInfo"></div>
+<div class="form-group" style="margin-top:16px">
+<label>Payment Amount (&#8377;) *</label>
+<input type="number" id="pAmount" placeholder="e.g. 1000" min="1" step="any">
+<div class="hint" id="pRemaining"></div>
+</div>
+<div class="form-group">
+<label>Payment Date</label>
+<input type="date" id="pDate">
+</div>
+<div class="form-group">
+<label>Note (optional)</label>
+<textarea id="pNote" placeholder="e.g. Cash payment"></textarea>
+</div>
+<button class="btn btn-success btn-block" onclick="savePayment()">Record Payment</button>
+</div>
+</div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal-overlay" id="txDetailModal">
+<div class="modal">
+<div class="modal-header"><h2>Udhaar Details</h2><button class="modal-close" onclick="closeModal('txDetailModal')">&times;</button></div>
+<div class="modal-body" id="txDetailBody"></div>
+</div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal-overlay" id="editCustomerModal">
+<div class="modal">
+<div class="modal-header"><h2>Edit Customer</h2><button class="modal-close" onclick="closeModal('editCustomerModal')">&times;</button></div>
+<div class="modal-body">
+<div class="form-group">
+<label>Customer Name *</label>
+<input type="text" id="ecName">
+</div>
+<div class="form-group">
+<label>Mobile (optional)</label>
+<input type="tel" id="ecMobile">
+</div>
+<button class="btn btn-primary btn-block" onclick="saveEditCustomer()">Save Changes</button>
+</div>
+</div>
+</div>
+
+<!-- Business Name Modal -->
+<div class="modal-overlay" id="businessNameModal">
+<div class="modal">
+<div class="modal-header"><h2>Business Name</h2><button class="modal-close" onclick="closeModal('businessNameModal')">&times;</button></div>
+<div class="modal-body">
+<div class="form-group">
+<label>Business Name</label>
+<input type="text" id="fBusinessName" placeholder="e.g. My Shop">
+</div>
+<button class="btn btn-primary btn-block" onclick="saveBusinessName()">Save</button>
+</div>
+</div>
+</div>
+
+<script>
+// === IndexedDB Setup ===
+const DB_NAME = 'UdhaarManagerDB';
+const DB_VERSION = 1;
+let db;
+
+function openDB(){
+return new Promise((resolve,reject)=>{
+const req = indexedDB.open(DB_NAME, DB_VERSION);
+req.onupgradeneeded = e => {
+const d = e.target.result;
+if(!d.objectStoreNames.contains('customers')){
+const cs = d.createObjectStore('customers',{keyPath:'id'});
+cs.createIndex('name','name',{unique:false});
+}
+if(!d.objectStoreNames.contains('credits')){
+const cr = d.createObjectStore('credits',{keyPath:'id'});
+cr.createIndex('customerId','customerId',{unique:false});
+cr.createIndex('status','status',{unique:false});
+cr.createIndex('dueDate','dueDate',{unique:false});
+}
+if(!d.objectStoreNames.contains('payments')){
+const pm = d.createObjectStore('payments',{keyPath:'id'});
+pm.createIndex('creditEntryId','creditEntryId',{unique:false});
+}
+if(!d.objectStoreNames.contains('settings')){
+d.createObjectStore('settings',{keyPath:'key'});
+}
+};
+req.onsuccess = e => { db = e.target.result; resolve(db); };
+req.onerror = e => reject(e.target.error);
+});
+}
+
+function genId(){return Date.now().toString(36)+'_'+Math.random().toString(36).substr(2,9)}
+
+function dbOp(store, mode, fn){
+return new Promise((resolve,reject)=>{
+const tx = db.transaction(store, mode);
+const st = tx.objectStore(store);
+const result = fn(st);
+if(result && result.onsuccess !== undefined){
+result.onsuccess = ()=> resolve(result.result);
+result.onerror = ()=> reject(result.error);
+} else {
+tx.oncomplete = ()=> resolve(result);
+tx.onerror = ()=> reject(tx.error);
+}
+});
+}
+
+function getAll(store){return dbOp(store,'readonly',s=>s.getAll())}
+function getById(store,id){return dbOp(store,'readonly',s=>s.get(id))}
+function putItem(store,item){return dbOp(store,'readwrite',s=>s.put(item))}
+function deleteItem(store,id){return dbOp(store,'readwrite',s=>s.delete(id))}
+function clearStore(store){return dbOp(store,'readwrite',s=>s.clear())}
+function getByIndex(store,idx,val){
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(store,'readonly');
+const st=tx.objectStore(store);
+const index=st.index(idx);
+const req=index.getAll(val);
+req.onsuccess=()=>resolve(req.result);
+req.onerror=()=>reject(req.error);
+});
+}
+
+// === Formatting ===
+function formatINR(n){
+if(n===0)return '₹0';
+const neg=n<0;
+n=Math.abs(n);
+let s=n.toFixed(0);
+let afterPoint='';
+if(n!==Math.floor(n)){afterPoint='.'+n.toFixed(2).split('.')[1];s=Math.floor(n).toString()}
+let lastThree=s.substring(s.length-3);
+let otherNumbers=s.substring(0,s.length-3);
+if(otherNumbers!=='')lastThree=','+lastThree;
+return (neg?'-':'')+'₹'+otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g,",")+lastThree+afterPoint;
+}
+
+function formatDate(d){
+if(!d)return '-';
+const dt=new Date(d+'T00:00:00');
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+return dt.getDate()+' '+months[dt.getMonth()]+' '+dt.getFullYear();
+}
+
+function todayStr(){
+const d=new Date();
+return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function isOverdue(dueDate,outstanding){
+if(!dueDate||outstanding<=0)return false;
+return dueDate<todayStr();
+}
+
+function isDueToday(dueDate,outstanding){
+if(!dueDate||outstanding<=0)return false;
+return dueDate===todayStr();
+}
+
+// === Toast ===
+function showToast(msg,type=''){
+const c=document.getElementById('toastContainer');
+const t=document.createElement('div');
+t.className='toast '+type;
+t.textContent=msg;
+c.appendChild(t);
+requestAnimationFrame(()=>t.classList.add('show'));
+setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},2800);
+}
+
+// === Confirm Dialog ===
+let confirmCb=null;
+function showConfirm(title,msg,okText,okClass){
+return new Promise(resolve=>{
+document.getElementById('confirmTitle').textContent=title;
+document.getElementById('confirmMsg').textContent=msg;
+const okBtn=document.getElementById('confirmOk');
+okBtn.textContent=okText||'Confirm';
+okBtn.className='btn btn-sm '+(okClass||'btn-danger');
+document.getElementById('confirmOverlay').classList.add('active');
+confirmCb=resolve;
+});
+}
+document.getElementById('confirmOk').onclick=()=>{document.getElementById('confirmOverlay').classList.remove('active');if(confirmCb)confirmCb(true);confirmCb=null};
+document.getElementById('confirmCancel').onclick=()=>{document.getElementById('confirmOverlay').classList.remove('active');if(confirmCb)confirmCb(false);confirmCb=null};
+
+// === Modal Helpers ===
+function openModal(id){document.getElementById(id).classList.add('active')}
+function closeModal(id){document.getElementById(id).classList.remove('active')}
+
+// === View Switching ===
+let currentView='dashboard';
+let currentCustomerId=null;
+let selectedExistingCustomerId=null;
+
+function switchView(view, custId){
+currentView=view;
+document.getElementById('dashboardView').style.display=view==='dashboard'?'block':'none';
+document.getElementById('customersView').style.display=view==='customers'?'block':'none';
+document.getElementById('customerDetailView').style.display=view==='customerDetail'?'block':'none';
+document.getElementById('customerDetailView').classList.toggle('active',view==='customerDetail');
+document.getElementById('settingsView').style.display=view==='settings'?'block':'none';
+document.getElementById('fabBtn').style.display=(view==='settings')?'none':'flex';
+// Update nav
+document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view||(view==='customerDetail'&&b.dataset.view==='customers')));
+document.querySelectorAll('#desktopNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view||(view==='customerDetail'&&b.dataset.view==='customers')));
+if(view==='dashboard'){loadDashboard()}
+else if(view==='customers'){renderCustomers()}
+else if(view==='customerDetail'&&custId){currentCustomerId=custId;renderCustomerDetail(custId)}
+else if(view==='settings'){loadSettings()}
+window.scrollTo(0,0);
+}
+
+// Bottom nav
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+document.querySelectorAll('#desktopNav button').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+
+// === Search ===
+function toggleSearch(){
+const sb=document.getElementById('searchBar');
+sb.classList.toggle('active');
+if(sb.classList.contains('active')){document.getElementById('globalSearch').focus()}
+else{document.getElementById('globalSearch').value='';if(currentView==='dashboard')loadDashboard()}
+}
+
+async function handleGlobalSearch(q){
+if(!q.trim()){if(currentView==='dashboard')loadDashboard();return}
+switchView('dashboard');
+const credits=await getAll('credits');
+const customers=await getAll('customers');
+const custMap={};customers.forEach(c=>custMap[c.id]=c);
+const ql=q.toLowerCase();
+const filtered=credits.filter(c=>{
+const cust=custMap[c.customerId];
+const name=cust?cust.name.toLowerCase():'';
+return name.includes(ql)||(c.note||'').toLowerCase().includes(ql)||c.id.toLowerCase().includes(ql);
+});
+await renderTxList(filtered,custMap);
+document.getElementById('listTitle').textContent='Search Results';
+}
+
+// === Filters ===
+let currentFilter='all';
+document.getElementById('filtersBar').addEventListener('click',e=>{
+const btn=e.target.closest('.filter-btn');
+if(!btn)return;
+document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+currentFilter=btn.dataset.filter;
+loadDashboard();
+});
+
+// === Dashboard ===
+async function loadDashboard(){
+const credits=await getAll('credits');
+const customers=await getAll('customers');
+const payments=await getAll('payments');
+const custMap={};customers.forEach(c=>custMap[c.id]=c);
+// Compute paid totals per credit
+const paidMap={};
+payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let totalOutstanding=0,totalPending=0,totalPartPaid=0;
+credits.forEach(cr=>{
+const paid=paidMap[cr.id]||0;
+const remaining=cr.amount-paid;
+const status=remaining<=0?'paid':(paid>0?'partpaid':'pending');
+cr._paid=paid;cr._remaining=Math.max(0,remaining);cr._status=status;
+if(status!=='paid'){
+totalOutstanding+=cr._remaining;
+if(status==='pending')totalPending+=cr._remaining;
+else totalPartPaid+=cr._remaining;
+}
+});
+document.getElementById('totalOutstanding').textContent=formatINR(totalOutstanding);
+document.getElementById('totalPending').textContent=formatINR(totalPending);
+document.getElementById('totalPartPaid').textContent=formatINR(totalPartPaid);
+document.getElementById('totalCustomers').textContent=customers.length;
+// Filter
+let filtered=credits;
+const today=todayStr();
+if(currentFilter==='pending')filtered=credits.filter(c=>c._status==='pending');
+else if(currentFilter==='partpaid')filtered=credits.filter(c=>c._status==='partpaid');
+else if(currentFilter==='paid')filtered=credits.filter(c=>c._status==='paid');
+else if(currentFilter==='duetoday')filtered=credits.filter(c=>c.dueDate===today&&c._remaining>0);
+else if(currentFilter==='overdue')filtered=credits.filter(c=>c.dueDate<today&&c._remaining>0);
+filtered.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+await renderTxList(filtered,custMap);
+document.getElementById('listTitle').textContent=currentFilter==='all'?'Recent Udhaar':currentFilter.charAt(0).toUpperCase()+currentFilter.slice(1)+' Udhaar';
+}
+
+async function renderTxList(credits,custMap){
+const container=document.getElementById('txList');
+if(!credits.length){
+container.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><h3>No entries found</h3><p>Start by adding your first Udhaar entry.</p><button class="btn btn-primary btn-sm" onclick="openAddUdhaar()">+ Add Udhaar</button></div>';
+return;
+}
+// Need payments to calculate
+const payments=await getAll('payments');
+const paidMap={};
+payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let html='';
+credits.forEach(cr=>{
+const cust=custMap[cr.customerId];
+const name=cust?cust.name:'Unknown';
+const paid=paidMap[cr.id]||0;
+const remaining=Math.max(0,cr.amount-paid);
+const status=remaining<=0?'paid':(paid>0?'partpaid':'pending');
+const od=isOverdue(cr.dueDate,remaining);
+const statusClass='status-'+status;
+let badgeClass='badge-'+status;
+let badgeText=status==='paid'?'PAID':(status==='partpaid'?'PART PAID':'PENDING');
+if(od){badgeClass='badge-overdue';badgeText='OVERDUE'}
+html+=`<div class="tx-card ${statusClass}" onclick="openTxDetail('${cr.id}')">
+<div class="tx-top"><span class="tx-name">${esc(name)}</span><span class="tx-amount">${formatINR(cr.amount)}</span></div>
+<div class="tx-bottom"><span class="tx-meta">${formatDate(cr.dueDate)}${cr.note?' · '+esc(cr.note.substring(0,30)):''}</span><span class="status-badge ${badgeClass}">${badgeText}</span></div>
+${remaining>0&&remaining!==cr.amount?'<div style="font-size:.8rem;color:var(--gray-500);margin-top:4px">Remaining: '+formatINR(remaining)+'</div>':''}
+</div>`;
+});
+container.innerHTML=html;
+}
+
+// === Open Transaction Detail ===
+async function openTxDetail(creditId){
+const cr=await getById('credits',creditId);
+if(!cr)return;
+const cust=await getById('customers',cr.customerId);
+const payments=await getByIndex('payments','creditEntryId',creditId);
+payments.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+const totalPaid=payments.reduce((s,p)=>s+p.amount,0);
+const remaining=Math.max(0,cr.amount-totalPaid);
+const status=remaining<=0?'paid':(totalPaid>0?'partpaid':'pending');
+let badgeClass='badge-'+status;
+let badgeText=status==='paid'?'PAID':(status==='partpaid'?'PART PAID':'PENDING');
+const od=isOverdue(cr.dueDate,remaining);
+if(od){badgeClass='badge-overdue';badgeText='OVERDUE'}
+let html=`
+<div class="detail-row"><span class="dr-label">ID</span><span class="dr-value" style="font-size:.75rem;color:var(--gray-400)">${cr.id}</span></div>
+<div class="detail-row"><span class="dr-label">Customer</span><span class="dr-value">${esc(cust?cust.name:'Unknown')}</span></div>
+<div class="detail-row"><span class="dr-label">Amount</span><span class="dr-value">${formatINR(cr.amount)}</span></div>
+<div class="detail-row"><span class="dr-label">Paid</span><span class="dr-value" style="color:var(--success)">${formatINR(totalPaid)}</span></div>
+<div class="detail-row"><span class="dr-label">Remaining</span><span class="dr-value" style="color:${remaining>0?'var(--danger)':'var(--success)'}">${formatINR(remaining)}</span></div>
+<div class="detail-row"><span class="dr-label">Due Date</span><span class="dr-value">${formatDate(cr.dueDate)}</span></div>
+<div class="detail-row"><span class="dr-label">Status</span><span class="status-badge ${badgeClass}">${badgeText}</span></div>
+${cr.note?'<div class="detail-row"><span class="dr-label">Note</span><span class="dr-value">'+esc(cr.note)+'</span></div>':''}
+<div class="detail-row"><span class="dr-label">Created</span><span class="dr-value">${formatDate(cr.createdAt.substring(0,10))}</span></div>
+`;
+if(payments.length){
+html+='<h3 style="margin-top:20px;margin-bottom:10px;font-size:.95rem">Payment History</h3>';
+payments.forEach(p=>{
+html+=`<div class="payment-item"><div><span class="p-amount">+${formatINR(p.amount)}</span><div class="p-date">${formatDate(p.paymentDate)}</div>${p.note?'<div class="p-note">'+esc(p.note)+'</div>':''}</div>
+<button class="btn btn-outline btn-sm" style="font-size:.7rem" onclick="deletePayment('${p.id}','${cr.id}')">Delete</button></div>`;
+});
+}
+html+='<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">';
+if(remaining>0)html+=`<button class="btn btn-success btn-sm" onclick="openPaymentModal('${cr.id}')">Record Payment</button>`;
+html+=`<button class="btn btn-outline btn-sm" onclick="viewCustomerFromTx('${cr.customerId}')">View Customer</button>`;
+html+=`<button class="btn btn-danger btn-sm" onclick="deleteCredit('${cr.id}')">Delete Entry</button>`;
+html+='</div>';
+document.getElementById('txDetailBody').innerHTML=html;
+openModal('txDetailModal');
+}
+
+function viewCustomerFromTx(custId){closeModal('txDetailModal');switchView('customerDetail',custId)}
+
+// === Customers ===
+async function renderCustomers(q){
+const customers=await getAll('customers');
+const credits=await getAll('credits');
+const payments=await getAll('payments');
+const paidMap={};
+payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+// Per customer
+const custStats={};
+credits.forEach(cr=>{
+if(!custStats[cr.customerId])custStats[cr.customerId]={total:0,paid:0,count:0,lastDate:''};
+const cs=custStats[cr.customerId];
+cs.total+=cr.amount;
+cs.paid+=(paidMap[cr.id]||0);
+cs.count++;
+if(cr.createdAt>cs.lastDate)cs.lastDate=cr.createdAt;
+});
+let list=customers.map(c=>{
+const s=custStats[c.id]||{total:0,paid:0,count:0,lastDate:''};
+return{...c,totalUdhaar:s.total,totalPaid:s.paid,outstanding:s.total-s.paid,txCount:s.count,lastTx:s.lastDate};
+});
+list.sort((a,b)=>b.outstanding-a.outstanding||a.name.localeCompare(b.name));
+if(q){const ql=q.toLowerCase();list=list.filter(c=>c.name.toLowerCase().includes(ql)||(c.mobile||'').includes(q))}
+const container=document.getElementById('customerList');
+if(!list.length){
+container.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><h3>No customers yet</h3><p>Start by adding your first Udhaar entry.</p><button class="btn btn-primary btn-sm" onclick="openAddUdhaar()">+ Add Udhaar</button></div>';
+return;
+}
+let html='';
+list.forEach(c=>{
+html+=`<div class="tx-card" onclick="switchView('customerDetail','${c.id}')">
+<div class="tx-top"><span class="tx-name">${esc(c.name)}</span><span class="tx-amount" style="color:${c.outstanding>0?'var(--danger)':'var(--success)'}">${formatINR(c.outstanding)}</span></div>
+<div class="tx-bottom"><span class="tx-meta">${c.txCount} transaction${c.txCount!==1?'s':''} ${c.mobile?'· '+c.mobile:''}</span>
+<span style="font-size:.75rem;color:var(--gray-400)">${c.lastTx?formatDate(c.lastTx.substring(0,10)):''}</span></div>
+</div>`;
+});
+container.innerHTML=html;
+}
+
+// === Customer Detail ===
+async function renderCustomerDetail(custId){
+const cust=await getById('customers',custId);
+if(!cust){switchView('dashboard');return}
+const credits=await getByIndex('credits','customerId',custId);
+const payments=await getAll('payments');
+const paidMap={};
+payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let totalCredit=0,totalPaid=0;
+credits.forEach(cr=>{totalCredit+=cr.amount;totalPaid+=(paidMap[cr.id]||0)});
+const outstanding=totalCredit-totalPaid;
+document.getElementById('customerHeader').innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:flex-start">
+<div>
+<div style="font-size:.82rem;color:var(--gray-500);cursor:pointer" onclick="switchView('customers')">&#8592; Back to Customers</div>
+<div class="cname">${esc(cust.name)}</div>
+${cust.mobile?'<div class="cmobile">'+esc(cust.mobile)+'</div>':''}
+</div>
+<div style="display:flex;gap:6px">
+<button class="btn btn-outline btn-sm" onclick="openEditCustomer('${cust.id}')">Edit</button>
+<button class="btn btn-danger btn-sm" onclick="deleteCustomer('${cust.id}')">Delete</button>
+</div>
+</div>
+<div class="customer-stats">
+<div class="cstat credit"><div class="cstat-val">${formatINR(totalCredit)}</div><div class="cstat-label">Total Credit</div></div>
+<div class="cstat paid"><div class="cstat-val">${formatINR(totalPaid)}</div><div class="cstat-label">Total Paid</div></div>
+<div class="cstat outstanding"><div class="cstat-val">${formatINR(outstanding)}</div><div class="cstat-label">Outstanding</div></div>
+</div>`;
+credits.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+const container=document.getElementById('customerTxList');
+if(!credits.length){
+container.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><h3>No transactions</h3><p>Add an Udhaar entry for this customer.</p></div>';
+return;
+}
+let html='';
+credits.forEach(cr=>{
+const paid=paidMap[cr.id]||0;
+const remaining=Math.max(0,cr.amount-paid);
+const status=remaining<=0?'paid':(paid>0?'partpaid':'pending');
+const od=isOverdue(cr.dueDate,remaining);
+let badgeClass='badge-'+status;
+let badgeText=status==='paid'?'PAID':(status==='partpaid'?'PART PAID':'PENDING');
+if(od){badgeClass='badge-overdue';badgeText='OVERDUE'}
+html+=`<div class="tx-card status-${status}" onclick="openTxDetail('${cr.id}')">
+<div class="tx-top"><span class="tx-name">${formatINR(cr.amount)}</span><span class="status-badge ${badgeClass}">${badgeText}</span></div>
+<div class="tx-bottom"><span class="tx-meta">${formatDate(cr.dueDate)}${cr.note?' · '+esc(cr.note.substring(0,30)):''}</span><span class="tx-meta">Rem: ${formatINR(remaining)}</span></div>
+${remaining>0?'<div style="margin-top:8px"><button class="btn btn-success btn-sm" onclick="event.stopPropagation();openPaymentModal(\''+cr.id+'\')">Record Payment</button></div>':''}
+</div>`;
+});
+container.innerHTML=html;
+}
+
+// === Add Udhaar ===
+function openAddUdhaar(){
+selectedExistingCustomerId=null;
+document.getElementById('fCustName').value='';
+document.getElementById('fCustMobile').value='';
+document.getElementById('fAmount').value='';
+document.getElementById('fDueDate').value='';
+document.getElementById('fNote').value='';
+document.getElementById('dupWarning').classList.remove('show');
+document.getElementById('custAutocomplete').classList.remove('show');
+document.getElementById('fCustName').disabled=false;
+document.getElementById('fCustMobile').disabled=false;
+openModal('addUdhaarModal');
+document.getElementById('fCustName').focus();
+}
+
+function openAddUdhaarForCustomer(){
+openAddUdhaar();
+if(currentCustomerId){
+getById('customers',currentCustomerId).then(c=>{
+if(c){
+selectedExistingCustomerId=c.id;
+document.getElementById('fCustName').value=c.name;
+document.getElementById('fCustName').disabled=true;
+document.getElementById('fCustMobile').value=c.mobile||'';
+document.getElementById('fCustMobile').disabled=true;
+}
+});
+}
+}
+
+async function checkDuplicate(val){
+selectedExistingCustomerId=null;
+document.getElementById('fCustName').disabled=false;
+document.getElementById('fCustMobile').disabled=false;
+const dw=document.getElementById('dupWarning');
+const ac=document.getElementById('custAutocomplete');
+if(!val.trim()){dw.classList.remove('show');ac.classList.remove('show');return}
+const customers=await getAll('customers');
+const vl=val.toLowerCase().trim();
+const matches=customers.filter(c=>c.name.toLowerCase().includes(vl));
+// Autocomplete
+if(matches.length&&val.length>=2){
+ac.innerHTML=matches.slice(0,5).map(c=>`<div class="autocomplete-item" data-id="${c.id}" onclick="selectAutocomplete('${c.id}')">${esc(c.name)}${c.mobile?' <span style=color:var(--gray-400)>'+c.mobile+'</span>':''}</div>`).join('');
+ac.classList.add('show');
+} else ac.classList.remove('show');
+// Exact / close match warning
+const exact=customers.find(c=>c.name.toLowerCase()===vl);
+if(exact){
+document.getElementById('dupWarningText').textContent=exact.name+' already exists. Add this Udhaar to the existing customer?';
+dw.classList.add('show');
+dw.dataset.custId=exact.id;
+} else dw.classList.remove('show');
+}
+
+async function selectAutocomplete(custId){
+const c=await getById('customers',custId);
+if(c){
+selectedExistingCustomerId=c.id;
+document.getElementById('fCustName').value=c.name;
+document.getElementById('fCustMobile').value=c.mobile||'';
+document.getElementById('fCustName').disabled=true;
+document.getElementById('fCustMobile').disabled=true;
+document.getElementById('custAutocomplete').classList.remove('show');
+document.getElementById('dupWarning').classList.remove('show');
+}
+}
+
+function useDuplicateCustomer(){
+const custId=document.getElementById('dupWarning').dataset.custId;
+if(custId)selectAutocomplete(custId);
+}
+
+function createNewCustomer(){
+selectedExistingCustomerId=null;
+document.getElementById('dupWarning').classList.remove('show');
+document.getElementById('fCustName').disabled=false;
+document.getElementById('fCustMobile').disabled=false;
+}
+
+async function saveUdhaar(){
+const name=document.getElementById('fCustName').value.trim();
+const mobile=document.getElementById('fCustMobile').value.trim();
+const amountStr=document.getElementById('fAmount').value;
+const dueDate=document.getElementById('fDueDate').value;
+const note=document.getElementById('fNote').value.trim();
+if(!name){showToast('Customer name is required','error');return}
+const amount=parseFloat(amountStr);
+if(!amount||amount<=0){showToast('Amount must be greater than zero','error');return}
+if(!dueDate){showToast('Due date is required','error');return}
+const now=new Date().toISOString();
+let customerId=selectedExistingCustomerId;
+if(!customerId){
+// Check for duplicate again
+const customers=await getAll('customers');
+const existing=customers.find(c=>c.name.toLowerCase()===name.toLowerCase());
+if(existing){
+const ok=await showConfirm('Customer Exists',existing.name+' already exists. Use existing customer?','Use Existing','btn-primary');
+if(ok){customerId=existing.id}
+else{return}
+}
+if(!customerId){
+customerId=genId();
+await putItem('customers',{id:customerId,name:name,mobile:mobile,createdAt:now,updatedAt:now});
+}
+} else {
+// Update mobile if provided and different
+if(mobile){
+const cust=await getById('customers',customerId);
+if(cust&&cust.mobile!==mobile){cust.mobile=mobile;cust.updatedAt=now;await putItem('customers',cust)}
+}
+}
+const creditId=genId();
+await putItem('credits',{id:creditId,customerId:customerId,amount:amount,dueDate:dueDate,note:note,createdAt:now,status:'pending'});
+closeModal('addUdhaarModal');
+showToast('Udhaar added successfully','success');
+if(currentView==='dashboard')loadDashboard();
+else if(currentView==='customerDetail'&&currentCustomerId===customerId)renderCustomerDetail(customerId);
+else if(currentView==='customers')renderCustomers();
+}
+
+// === Payment ===
+let currentPaymentCreditId=null;
+async function openPaymentModal(creditId){
+closeModal('txDetailModal');
+currentPaymentCreditId=creditId;
+const cr=await getById('credits',creditId);
+if(!cr)return;
+const cust=await getById('customers',cr.customerId);
+const payments=await getByIndex('payments','creditEntryId',creditId);
+const totalPaid=payments.reduce((s,p)=>s+p.amount,0);
+const remaining=Math.max(0,cr.amount-totalPaid);
+if(remaining<=0){
+// Already paid
+const ok=await showConfirm('Already Paid','This entry is already marked Paid. Are you sure you want to change its status?','Continue','btn-primary');
+if(!ok)return;
+}
+document.getElementById('paymentInfo').innerHTML=`
+<div class="detail-row"><span class="dr-label">Customer</span><span class="dr-value">${esc(cust?cust.name:'')}</span></div>
+<div class="detail-row"><span class="dr-label">Original Amount</span><span class="dr-value">${formatINR(cr.amount)}</span></div>
+<div class="detail-row"><span class="dr-label">Total Paid</span><span class="dr-value" style="color:var(--success)">${formatINR(totalPaid)}</span></div>
+<div class="detail-row"><span class="dr-label">Remaining</span><span class="dr-value" style="color:var(--danger)">${formatINR(remaining)}</span></div>
+`;
+document.getElementById('pRemaining').textContent='Maximum: '+formatINR(remaining);
+document.getElementById('pAmount').value='';
+document.getElementById('pAmount').max=remaining;
+document.getElementById('pDate').value=todayStr();
+document.getElementById('pNote').value='';
+openModal('paymentModal');
+document.getElementById('pAmount').focus();
+}
+
+async function savePayment(){
+const amountStr=document.getElementById('pAmount').value;
+const pDate=document.getElementById('pDate').value;
+const pNote=document.getElementById('pNote').value.trim();
+const amount=parseFloat(amountStr);
+if(!amount||amount<=0){showToast('Payment amount must be greater than zero','error');return}
+const cr=await getById('credits',currentPaymentCreditId);
+if(!cr)return;
+const payments=await getByIndex('payments','creditEntryId',cr.id);
+const totalPaid=payments.reduce((s,p)=>s+p.amount,0);
+const remaining=cr.amount-totalPaid;
+if(amount>remaining+0.01){showToast('Payment cannot exceed remaining balance of '+formatINR(remaining),'error');return}
+const now=new Date().toISOString();
+await putItem('payments',{id:genId(),creditEntryId:cr.id,amount:amount,paymentDate:pDate||todayStr(),note:pNote,createdAt:now});
+// Update credit status
+const newPaid=totalPaid+amount;
+const newRemaining=cr.amount-newPaid;
+cr.status=newRemaining<=0?'paid':(newPaid>0?'partpaid':'pending');
+await putItem('credits',cr);
+closeModal('paymentModal');
+showToast('Payment recorded','success');
+if(currentView==='dashboard')loadDashboard();
+else if(currentView==='customerDetail')renderCustomerDetail(currentCustomerId);
+}
+
+// === Delete ===
+async function deleteCredit(creditId){
+const ok=await showConfirm('Delete Entry','Are you sure you want to delete this Udhaar entry? All associated payments will also be deleted.','Delete','btn-danger');
+if(!ok)return;
+const payments=await getByIndex('payments','creditEntryId',creditId);
+for(const p of payments)await deleteItem('payments',p.id);
+await deleteItem('credits',creditId);
+closeModal('txDetailModal');
+showToast('Entry deleted','success');
+if(currentView==='dashboard')loadDashboard();
+else if(currentView==='customerDetail')renderCustomerDetail(currentCustomerId);
+}
+
+async function deletePayment(paymentId,creditId){
+const ok=await showConfirm('Delete Payment','Are you sure you want to delete this payment record?','Delete','btn-danger');
+if(!ok)return;
+await deleteItem('payments',paymentId);
+// Recalc status
+const cr=await getById('credits',creditId);
+if(cr){
+const payments=await getByIndex('payments','creditEntryId',creditId);
+const totalPaid=payments.reduce((s,p)=>s+p.amount,0);
+const remaining=cr.amount-totalPaid;
+const wasPaid=cr.status==='paid';
+cr.status=remaining<=0?'paid':(totalPaid>0?'partpaid':'pending');
+if(wasPaid&&cr.status!=='paid'){
+// Already confirmed above
+}
+await putItem('credits',cr);
+}
+closeModal('txDetailModal');
+showToast('Payment deleted','success');
+if(currentView==='dashboard')loadDashboard();
+else if(currentView==='customerDetail')renderCustomerDetail(currentCustomerId);
+}
+
+async function deleteCustomer(custId){
+const credits=await getByIndex('credits','customerId',custId);
+const count=credits.length;
+const ok=await showConfirm('Delete Customer','This will delete the customer and '+count+' Udhaar entr'+(count===1?'y':'ies')+' with all payments. This cannot be undone.','Delete All','btn-danger');
+if(!ok)return;
+for(const cr of credits){
+const payments=await getByIndex('payments','creditEntryId',cr.id);
+for(const p of payments)await deleteItem('payments',p.id);
+await deleteItem('credits',cr.id);
+}
+await deleteItem('customers',custId);
+showToast('Customer deleted','success');
+switchView('customers');
+}
+
+// === Edit Customer ===
+let editingCustomerId=null;
+async function openEditCustomer(custId){
+editingCustomerId=custId;
+const c=await getById('customers',custId);
+if(!c)return;
+document.getElementById('ecName').value=c.name;
+document.getElementById('ecMobile').value=c.mobile||'';
+openModal('editCustomerModal');
+}
+
+async function saveEditCustomer(){
+const name=document.getElementById('ecName').value.trim();
+const mobile=document.getElementById('ecMobile').value.trim();
+if(!name){showToast('Name is required','error');return}
+const c=await getById('customers',editingCustomerId);
+if(!c)return;
+// Check duplicate
+if(name.toLowerCase()!==c.name.toLowerCase()){
+const all=await getAll('customers');
+const dup=all.find(x=>x.name.toLowerCase()===name.toLowerCase()&&x.id!==c.id);
+if(dup){showToast('Another customer with this name already exists','error');return}
+}
+c.name=name;c.mobile=mobile;c.updatedAt=new Date().toISOString();
+await putItem('customers',c);
+closeModal('editCustomerModal');
+showToast('Customer updated','success');
+renderCustomerDetail(editingCustomerId);
+}
+
+// === Backup ===
+async function doBackup(){
+const customers=await getAll('customers');
+const credits=await getAll('credits');
+const payments=await getAll('payments');
+let settings=await getAll('settings');
+const data={
+version:1,
+backupDate:new Date().toISOString(),
+app:'UdhaarManager',
+customers,credits,payments,settings
+};
+const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+const d=new Date();
+a.href=url;
+a.download='udhaar-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
+a.click();
+URL.revokeObjectURL(url);
+showToast('Backup created','success');
+}
+
+// === Restore ===
+async function handleRestoreFile(event){
+const file=event.target.files[0];
+event.target.value='';
+if(!file)return;
+try{
+const text=await file.text();
+const data=JSON.parse(text);
+if(!data.app||data.app!=='UdhaarManager'||!data.customers||!data.credits||!data.payments){
+showToast('Invalid backup file','error');return;
+}
+const ok=await showConfirm('Restore Backup','Existing local data may be affected. This will merge/overwrite data. Please confirm before continuing.','Restore','btn-primary');
+if(!ok)return;
+// Clear and restore
+await clearStore('customers');
+await clearStore('credits');
+await clearStore('payments');
+await clearStore('settings');
+for(const c of data.customers)await putItem('customers',c);
+for(const c of data.credits)await putItem('credits',c);
+for(const p of data.payments)await putItem('payments',p);
+if(data.settings){for(const s of data.settings)await putItem('settings',s)}
+showToast('Backup restored successfully','success');
+loadDashboard();
+switchView('dashboard');
+}catch(e){
+showToast('Error reading backup file: '+e.message,'error');
+}
+}
+
+// === Export CSV ===
+async function exportCSV(){
+const credits=await getAll('credits');
+const customers=await getAll('customers');
+const payments=await getAll('payments');
+const custMap={};customers.forEach(c=>custMap[c.id]=c);
+const paidMap={};
+payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let csv='Customer Name,Transaction Date,Original Amount,Paid Amount,Remaining Amount,Due Date,Status,Note\n';
+credits.forEach(cr=>{
+const cust=custMap[cr.customerId];
+const paid=paidMap[cr.id]||0;
+const remaining=Math.max(0,cr.amount-paid);
+const status=remaining<=0?'Paid':(paid>0?'Part Paid':'Pending');
+csv+=csvField(cust?cust.name:'')+','+csvField(cr.createdAt.substring(0,10))+','+cr.amount+','+paid+','+remaining+','+csvField(cr.dueDate)+','+csvField(status)+','+csvField(cr.note||'')+'\n';
+});
+const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;a.download='udhaar-export-'+todayStr()+'.csv';a.click();
+URL.revokeObjectURL(url);
+showToast('CSV exported','success');
+}
+
+function csvField(v){return '"'+String(v).replace(/"/g,'""')+'"'}
+
+// === Clear All Data ===
+async function clearAllData(){
+const ok1=await showConfirm('Clear All Data','This will permanently delete ALL customers, Udhaar entries and payments. This cannot be undone.','Delete Everything','btn-danger');
+if(!ok1)return;
+const ok2=await showConfirm('Final Confirmation','Are you ABSOLUTELY sure? All data will be lost forever.','Yes, Delete All','btn-danger');
+if(!ok2)return;
+await clearStore('customers');
+await clearStore('credits');
+await clearStore('payments');
+showToast('All data cleared','success');
+switchView('dashboard');
+loadDashboard();
+}
+
+// === Settings ===
+async function loadSettings(){
+const s=await getById('settings','businessName').catch(()=>null);
+document.getElementById('businessNameDisplay').textContent=s?s.value:'Udhaar Manager';
+}
+
+function openBusinessNameModal(){
+getById('settings','businessName').then(s=>{
+document.getElementById('fBusinessName').value=s?s.value:'';
+openModal('businessNameModal');
+}).catch(()=>{
+document.getElementById('fBusinessName').value='';
+openModal('businessNameModal');
+});
+}
+
+async function saveBusinessName(){
+const val=document.getElementById('fBusinessName').value.trim()||'Udhaar Manager';
+await putItem('settings',{key:'businessName',value:val});
+document.getElementById('businessNameDisplay').textContent=val;
+closeModal('businessNameModal');
+showToast('Business name updated','success');
+}
+
+// === Helper ===
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// === Close modals on overlay click ===
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('active')});
+});
+
+// === Close autocomplete on outside click ===
+document.addEventListener('click',e=>{
+if(!e.target.closest('#fCustName')&&!e.target.closest('#custAutocomplete')){
+document.getElementById('custAutocomplete').classList.remove('show');
+}
+});
+
+// === Init ===
+openDB().then(()=>{
+loadDashboard();
+loadSettings();
+}).catch(e=>{
+document.getElementById('txList').innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Database Error</h3><p>'+e.message+'</p></div>';
+});
+</script>
+</body>
+</html>
