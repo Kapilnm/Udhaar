@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Udhaar Manager Pro</title>
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;
+--success:#16a34a;--success-light:#dcfce7;
+--warning:#ea580c;--warning-light:#fff7ed;
+--danger:#dc2626;--danger-light:#fef2f2;
+--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;
+--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;
+--gray-800:#1f2937;--gray-900:#111827;
+--bg:#f1f5f9;--card:#fff;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.1);
+--shadow-lg:0 4px 12px rgba(0,0,0,.12);
+}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--gray-800);line-height:1.5;min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:inherit;font-size:1rem;outline:none}
+.app-container{max-width:900px;margin:0 auto;padding-bottom:80px}
+.header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:1.2rem;font-weight:700;letter-spacing:-.3px}
+.header .subtitle{font-size:.72rem;opacity:.8;margin-top:2px}
+.header-actions{display:flex;gap:6px;flex-wrap:wrap}
+.header-actions button{background:rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:7px;display:flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:.95rem;transition:background .2s}
+.header-actions button:hover{background:rgba(255,255,255,.3)}
+.search-bar{margin-top:12px;display:none}
+.search-bar.active{display:flex}
+.search-bar input{flex:1;padding:10px 14px;border-radius:8px;border:none;font-size:.95rem;background:rgba(255,255,255,.95);color:var(--gray-800)}
+.search-bar input::placeholder{color:var(--gray-400)}
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px 20px}
+.summary-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.summary-card .label{font-size:.72rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.summary-card .value{font-size:1.25rem;font-weight:700;margin-top:4px;color:var(--gray-900)}
+.summary-card.outstanding .value{color:var(--danger)}
+.summary-card.pending .value{color:var(--warning)}
+.summary-card.partpaid .value{color:var(--primary)}
+.summary-card.customers .value{color:var(--success)}
+.section{padding:0 20px;margin-bottom:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.section-title{font-size:1rem;font-weight:700;color:var(--gray-800)}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:0 20px 12px;-ms-overflow-style:none;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;white-space:nowrap;background:var(--card);color:var(--gray-600);border:1px solid var(--gray-200);transition:all .2s}
+.filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.tx-list{display:flex;flex-direction:column;gap:10px}
+.tx-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s;border-left:4px solid var(--gray-200)}
+.tx-card:hover{box-shadow:var(--shadow-lg)}
+.tx-card.status-pending{border-left-color:var(--warning)}
+.tx-card.status-partpaid{border-left-color:var(--primary)}
+.tx-card.status-paid{border-left-color:var(--success)}
+.tx-card .tx-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.tx-card .tx-name{font-weight:600;font-size:.93rem;color:var(--gray-800)}
+.tx-card .tx-amount{font-weight:700;font-size:.95rem}
+.tx-card .tx-bottom{display:flex;justify-content:space-between;align-items:center}
+.tx-card .tx-meta{font-size:.76rem;color:var(--gray-500)}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.badge-pending{background:var(--warning-light);color:var(--warning)}
+.badge-partpaid{background:var(--primary-light);color:var(--primary)}
+.badge-paid{background:var(--success-light);color:var(--success)}
+.badge-overdue{background:var(--danger-light);color:var(--danger)}
+.fab{position:fixed;bottom:90px;right:20px;width:54px;height:54px;border-radius:50%;background:var(--primary);color:#fff;font-size:1.7rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,99,235,.4);z-index:90;transition:transform .2s}
+.fab:hover{transform:scale(1.08)}
+.fab-menu{position:fixed;bottom:150px;right:20px;z-index:89;display:none;flex-direction:column;gap:8px;align-items:flex-end}
+.fab-menu.show{display:flex}
+.fab-menu-item{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:24px;padding:8px 16px;box-shadow:var(--shadow-lg);font-size:.85rem;font-weight:600;color:var(--gray-700);cursor:pointer;transition:transform .15s;white-space:nowrap}
+.fab-menu-item:hover{transform:scale(1.03)}
+.fab-menu-item .fmi-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:0;transform:translateY(30px);transition:transform .25s}
+.modal-overlay.active .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0;position:sticky;top:0;background:var(--card);z-index:1}
+.modal-header h2{font-size:1.05rem;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--gray-600)}
+.modal-body{padding:14px 20px 24px}
+.form-group{margin-bottom:14px;position:relative}
+.form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--gray-600);margin-bottom:5px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:11px 14px;border:1.5px solid var(--gray-200);border-radius:10px;font-size:.95rem;transition:border-color .2s;background:#fff}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--primary)}
+.form-group textarea{resize:vertical;min-height:55px}
+.form-group .hint{font-size:.73rem;color:var(--gray-400);margin-top:4px}
+.btn{padding:11px 22px;border-radius:10px;font-size:.9rem;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-outline{background:transparent;color:var(--gray-600);border:1.5px solid var(--gray-200)}
+.btn-outline:hover{border-color:var(--gray-400)}
+.btn-block{width:100%;display:flex}
+.btn-sm{padding:7px 13px;font-size:.8rem}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.customer-view{display:none}.customer-view.active{display:block}
+.customer-header{padding:18px 20px;background:var(--card);border-radius:0 0 var(--radius) var(--radius);margin-bottom:16px;box-shadow:var(--shadow)}
+.customer-header .cname{font-size:1.2rem;font-weight:700}
+.customer-header .cmobile{font-size:.83rem;color:var(--gray-500);margin-top:2px}
+.customer-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.cstat{text-align:center}
+.cstat .cstat-val{font-size:1.05rem;font-weight:700}
+.cstat .cstat-label{font-size:.7rem;color:var(--gray-500);text-transform:uppercase}
+.cstat.credit .cstat-val{color:var(--gray-800)}
+.cstat.paid .cstat-val{color:var(--success)}
+.cstat.outstanding .cstat-val{color:var(--danger)}
+.payment-item{background:var(--gray-50);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.payment-item .p-amount{font-weight:700;color:var(--success)}
+.payment-item .p-date{font-size:.78rem;color:var(--gray-500)}
+.payment-item .p-note{font-size:.76rem;color:var(--gray-400);margin-top:2px}
+.empty-state{text-align:center;padding:40px 20px}
+.empty-state .empty-icon{font-size:2.8rem;margin-bottom:12px;opacity:.3}
+.empty-state h3{font-size:1rem;color:var(--gray-600);margin-bottom:6px}
+.empty-state p{font-size:.83rem;color:var(--gray-400);margin-bottom:18px}
+.toast-container{position:fixed;top:16px;right:16px;z-index:500;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--gray-800);color:#fff;padding:11px 18px;border-radius:10px;font-size:.85rem;font-weight:500;box-shadow:var(--shadow-lg);opacity:0;transform:translateX(40px);transition:all .3s;pointer-events:all;max-width:300px}
+.toast.show{opacity:1;transform:translateX(0)}
+.toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.confirm-overlay.active{opacity:1;pointer-events:all}
+.confirm-box{background:var(--card);border-radius:16px;padding:22px;max-width:360px;width:90%;box-shadow:var(--shadow-lg)}
+.confirm-box h3{font-size:1rem;font-weight:700;margin-bottom:8px}
+.confirm-box p{font-size:.88rem;color:var(--gray-600);margin-bottom:18px;line-height:1.5}
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+.dup-warning{background:var(--warning-light);border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none}
+.dup-warning.show{display:block}
+.dup-warning p{font-size:.85rem;color:var(--warning);margin-bottom:10px;line-height:1.5}
+.dup-actions{display:flex;gap:8px;flex-wrap:wrap}
+.settings-group{background:var(--card);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
+.settings-item{padding:13px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background .15s}
+.settings-item:last-child{border-bottom:none}
+.settings-item:hover{background:var(--gray-50)}
+.settings-item .si-label{font-size:.9rem;font-weight:500}
+.settings-item .si-icon{color:var(--gray-400);font-size:.9rem}
+.settings-item.danger .si-label{color:var(--danger)}
+.detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--gray-100)}
+.detail-row:last-child{border-bottom:none}
+.detail-row .dr-label{font-size:.83rem;color:var(--gray-500)}
+.detail-row .dr-value{font-size:.88rem;font-weight:600;text-align:right;max-width:60%;word-break:break-word}
+.autocomplete-list{background:var(--card);border:1px solid var(--gray-200);border-radius:8px;max-height:150px;overflow-y:auto;position:absolute;left:0;right:0;z-index:10;box-shadow:var(--shadow-lg);display:none}
+.autocomplete-list.show{display:block}
+.autocomplete-item{padding:9px 14px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--gray-100);transition:background .15s}
+.autocomplete-item:hover{background:var(--primary-light)}
+.autocomplete-item:last-child{border-bottom:none}
+.hidden-input{position:absolute;width:0;height:0;opacity:0;pointer-events:none}
+.view-section{min-height:40vh}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--gray-200);display:flex;justify-content:center;z-index:95;padding:0;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav .nav-inner{display:flex;max-width:560px;width:100%}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;font-size:.62rem;font-weight:600;color:var(--gray-400);transition:color .2s;background:transparent;gap:1px}
+.nav-btn.active{color:var(--primary)}
+.nav-btn .nav-icon{font-size:1.15rem}
+/* Invoice */
+.invoice-preview{background:#fff;padding:20px;border:1px solid var(--gray-200);border-radius:8px;margin-top:12px;font-size:.85rem}
+.invoice-preview table{width:100%;border-collapse:collapse;margin:10px 0}
+.invoice-preview th,.invoice-preview td{border:1px solid var(--gray-300);padding:6px 8px;text-align:left;font-size:.8rem}
+.invoice-preview th{background:var(--gray-100);font-weight:600}
+.invoice-preview .inv-header{text-align:center;margin-bottom:12px}
+.invoice-preview .inv-header h2{font-size:1.1rem;margin-bottom:2px}
+.invoice-preview .inv-header p{font-size:.78rem;color:var(--gray-500)}
+.invoice-preview .inv-total{text-align:right;font-size:1rem;font-weight:700;margin-top:8px}
+.inv-item-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-end}
+.inv-item-row .form-group{flex:1;margin-bottom:0}
+.inv-item-row .btn{align-self:flex-end;margin-bottom:0}
+/* Profile logo */
+.profile-logo-preview{width:80px;height:80px;border-radius:12px;border:2px dashed var(--gray-300);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;margin-bottom:10px;background:var(--gray-50)}
+.profile-logo-preview img{width:100%;height:100%;object-fit:contain}
+/* Tabs */
+.tab-bar{display:flex;border-bottom:2px solid var(--gray-200);margin-bottom:14px}
+.tab-btn{flex:1;padding:10px;text-align:center;font-size:.85rem;font-weight:600;color:var(--gray-500);background:transparent;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+/* Inventory */
+.inv-card{background:var(--card);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.inv-card .inv-name{font-weight:600;font-size:.9rem}
+.inv-card .inv-price{font-weight:700;color:var(--primary);font-size:.95rem}
+.inv-card .inv-meta{font-size:.75rem;color:var(--gray-500)}
+/* Bulk upload area */
+.upload-area{border:2px dashed var(--gray-300);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:14px}
+.upload-area:hover{border-color:var(--primary)}
+.upload-area p{font-size:.88rem;color:var(--gray-500);margin-top:8px}
+@media(min-width:640px){
+.summary{grid-template-columns:repeat(4,1fr)}
+.modal{border-radius:16px;max-height:85vh}
+.modal-overlay{align-items:center}
+}
+@media(min-width:900px){
+.bottom-nav{display:none}
+.app-container{padding-bottom:20px}
+}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="confirm-overlay" id="confirmOverlay">
+<div class="confirm-box" id="confirmBox">
+<h3 id="confirmTitle">Confirm</h3>
+<p id="confirmMsg">Are you sure?</p>
+<div class="confirm-actions">
+<button class="btn btn-outline btn-sm" id="confirmCancel">Cancel</button>
+<button class="btn btn-danger btn-sm" id="confirmOk">Confirm</button>
+</div>
+</div>
+</div>
+
+<header class="header">
+<div class="header-top">
+<div>
+<h1 id="appTitle">&#8377; Udhaar Manager</h1>
+<div class="subtitle">Simple &bull; Private &bull; Offline</div>
+</div>
+<div class="header-actions">
+<button onclick="toggleSearch()" title="Search">&#128269;</button>
+<button onclick="doBackup()" title="Backup">&#128190;</button>
+<button onclick="document.getElementById('restoreFileInput').click()" title="Restore">&#128194;</button>
+<button onclick="switchView('settings')" title="Settings">&#9881;</button>
+</div>
+</div>
+<div class="search-bar" id="searchBar">
+<input type="text" id="globalSearch" placeholder="Search customers, notes, IDs..." oninput="handleGlobalSearch(this.value)">
+</div>
+</header>
+<input type="file" accept=".json" class="hidden-input" id="restoreFileInput" onchange="handleRestoreFile(event)">
+<input type="file" accept=".csv" class="hidden-input" id="bulkUploadInput" onchange="handleBulkUpload(event)">
+<input type="file" accept="image/*" class="hidden-input" id="logoInput" onchange="handleLogoUpload(event)">
+
+<div class="app-container" id="appContainer">
+<!-- Dashboard -->
+<div class="view-section" id="dashboardView">
+<div class="summary" id="summaryCards">
+<div class="summary-card outstanding"><div class="label">Total Outstanding</div><div class="value" id="totalOutstanding">&#8377;0</div></div>
+<div class="summary-card pending"><div class="label">Pending</div><div class="value" id="totalPending">&#8377;0</div></div>
+<div class="summary-card partpaid"><div class="label">Part Paid</div><div class="value" id="totalPartPaid">&#8377;0</div></div>
+<div class="summary-card customers"><div class="label">Customers</div><div class="value" id="totalCustomers">0</div></div>
+</div>
+<div class="filters" id="filtersBar">
+<button class="filter-btn active" data-filter="all">All</button>
+<button class="filter-btn" data-filter="pending">Pending</button>
+<button class="filter-btn" data-filter="partpaid">Part Paid</button>
+<button class="filter-btn" data-filter="paid">Paid</button>
+<button class="filter-btn" data-filter="duetoday">Due Today</button>
+<button class="filter-btn" data-filter="overdue">Overdue</button>
+</div>
+<div class="section">
+<div class="section-header"><div class="section-title" id="listTitle">Recent Udhaar</div></div>
+<div class="tx-list" id="txList"></div>
+</div>
+</div>
+
+<!-- Customers -->
+<div class="view-section" id="customersView" style="display:none">
+<div class="section" style="padding-top:16px">
+<div class="section-header"><div class="section-title">All Customers</div></div>
+<div style="margin-bottom:12px"><input type="text" id="customerSearchInput" placeholder="Search customers..." style="width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:10px;font-size:.9rem" oninput="renderCustomers(this.value)"></div>
+<div class="tx-list customer-list" id="customerList"></div>
+</div>
+</div>
+
+<!-- Customer Detail -->
+<div class="view-section customer-view" id="customerDetailView">
+<div class="customer-header" id="customerHeader"></div>
+<div class="section" style="padding-top:4px">
+<div class="section-header">
+<div class="section-title">Transaction History</div>
+<button class="btn btn-primary btn-sm" onclick="openAddUdhaarForCustomer()">+ Add Udhaar</button>
+</div>
+<div class="tx-list" id="customerTxList"></div>
+</div>
+</div>
+
+<!-- Inventory -->
+<div class="view-section" id="inventoryView" style="display:none">
+<div class="section" style="padding-top:16px">
+<div class="section-header">
+<div class="section-title">Inventory Items</div>
+<button class="btn btn-primary btn-sm" onclick="openAddInventory()">+ Add Item</button>
+</div>
+<div style="margin-bottom:12px"><input type="text" id="invSearchInput" placeholder="Search items..." style="width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:10px;font-size:.9rem" oninput="renderInventory(this.value)"></div>
+<div id="inventoryList"></div>
+</div>
+</div>
+
+<!-- Bills -->
+<div class="view-section" id="billsView" style="display:none">
+<div class="section" style="padding-top:16px">
+<div class="section-header">
+<div class="section-title">Sales Bills</div>
+<button class="btn btn-primary btn-sm" onclick="openCreateBill()">+ New Bill</button>
+</div>
+<div id="billsList" class="tx-list"></div>
+</div>
+</div>
+
+<!-- Settings -->
+<div class="view-section" id="settingsView" style="display:none">
+<div class="section" style="padding-top:16px">
+<div class="section-title" style="margin-bottom:16px">Settings</div>
+<div class="settings-group">
+<div class="settings-item" onclick="openProfileModal()"><span class="si-label">&#128100; My Profile / Company</span><span class="si-icon">&#9654;</span></div>
+<div class="settings-item" onclick="openDefaultDueDateModal()"><span class="si-label">&#128197; Default Due Date</span><span class="si-icon" id="defaultDueDaysDisplay">30 days</span></div>
+</div>
+<div class="settings-group">
+<div class="settings-item" onclick="doBackup()"><span class="si-label">&#128190; Backup Data</span><span class="si-icon">&#9654;</span></div>
+<div class="settings-item" onclick="document.getElementById('restoreFileInput').click()"><span class="si-label">&#128194; Restore Backup</span><span class="si-icon">&#9654;</span></div>
+<div class="settings-item" onclick="exportCSV()"><span class="si-label">&#128196; Export CSV</span><span class="si-icon">&#9654;</span></div>
+</div>
+<div class="settings-group">
+<div class="settings-item" onclick="openBulkUploadModal()"><span class="si-label">&#128203; Excel Bulk Upload</span><span class="si-icon">&#9654;</span></div>
+</div>
+<div class="settings-group">
+<div class="settings-item danger" onclick="clearAllData()"><span class="si-label">&#128465; Clear All Data</span><span class="si-icon">&#9654;</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- FAB -->
+<div class="fab-menu" id="fabMenu">
+<div class="fab-menu-item" onclick="openAddUdhaar();closeFabMenu()"><div class="fmi-icon" style="background:var(--warning)">&#128203;</div>Add Udhaar</div>
+<div class="fab-menu-item" onclick="openCreateBill();closeFabMenu()"><div class="fmi-icon" style="background:var(--success)">&#129534;</div>Sales Bill</div>
+<div class="fab-menu-item" onclick="openAddInventory();closeFabMenu()"><div class="fmi-icon" style="background:var(--primary)">&#128230;</div>Add Inventory</div>
+</div>
+<button class="fab" id="fabBtn" onclick="toggleFabMenu()">+</button>
+
+<nav class="bottom-nav">
+<div class="nav-inner">
+<button class="nav-btn active" data-view="dashboard"><span class="nav-icon">&#127968;</span>Home</button>
+<button class="nav-btn" data-view="customers"><span class="nav-icon">&#128101;</span>Parties</button>
+<button class="nav-btn" data-view="inventoryView"><span class="nav-icon">&#128230;</span>Items</button>
+<button class="nav-btn" data-view="billsView"><span class="nav-icon">&#129534;</span>Bills</button>
+<button class="nav-btn" data-view="settings"><span class="nav-icon">&#9881;</span>More</button>
+</div>
+</nav>
+
+<!-- MODALS -->
+<!-- Add Udhaar -->
+<div class="modal-overlay" id="addUdhaarModal">
+<div class="modal">
+<div class="modal-header"><h2>Add Udhaar</h2><button class="modal-close" onclick="closeModal('addUdhaarModal')">&times;</button></div>
+<div class="modal-body">
+<div class="dup-warning" id="dupWarning"><p id="dupWarningText"></p><div class="dup-actions"><button class="btn btn-primary btn-sm" onclick="useDuplicateCustomer()">Use Existing</button><button class="btn btn-outline btn-sm" onclick="createNewCustomer()">Create New</button></div></div>
+<div class="form-group"><label>Customer Name *</label><input type="text" id="fCustName" placeholder="e.g. Ramesh Kirana" autocomplete="off" oninput="checkDuplicate(this.value)"><div class="autocomplete-list" id="custAutocomplete"></div></div>
+<div class="form-group"><label>Mobile (optional)</label><input type="tel" id="fCustMobile" placeholder="e.g. 9876543210"></div>
+<div class="form-group"><label>Amount (&#8377;) *</label><input type="number" id="fAmount" placeholder="e.g. 2450" min="1" step="any"></div>
+<div class="form-group"><label>Due Date *</label><input type="date" id="fDueDate"></div>
+<div class="form-group"><label>Note (optional)</label><textarea id="fNote" placeholder="e.g. 2 cartons cooking oil"></textarea></div>
+<button class="btn btn-primary btn-block" onclick="saveUdhaar()">Save Udhaar</button>
+</div>
+</div>
+</div>
+
+<!-- Payment -->
+<div class="modal-overlay" id="paymentModal">
+<div class="modal">
+<div class="modal-header"><h2>Record Payment</h2><button class="modal-close" onclick="closeModal('paymentModal')">&times;</button></div>
+<div class="modal-body">
+<div id="paymentInfo"></div>
+<div class="form-group" style="margin-top:14px"><label>Payment Amount (&#8377;) *</label><input type="number" id="pAmount" placeholder="e.g. 1000" min="1" step="any"><div class="hint" id="pRemaining"></div></div>
+<div class="form-group"><label>Payment Date</label><input type="date" id="pDate"></div>
+<div class="form-group"><label>Note (optional)</label><textarea id="pNote" placeholder="e.g. Cash payment"></textarea></div>
+<button class="btn btn-success btn-block" onclick="savePayment()">Record Payment</button>
+</div>
+</div>
+</div>
+
+<!-- TX Detail -->
+<div class="modal-overlay" id="txDetailModal">
+<div class="modal">
+<div class="modal-header"><h2>Udhaar Details</h2><button class="modal-close" onclick="closeModal('txDetailModal')">&times;</button></div>
+<div class="modal-body" id="txDetailBody"></div>
+</div>
+</div>
+
+<!-- Edit Customer -->
+<div class="modal-overlay" id="editCustomerModal">
+<div class="modal">
+<div class="modal-header"><h2>Edit Customer</h2><button class="modal-close" onclick="closeModal('editCustomerModal')">&times;</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Customer Name *</label><input type="text" id="ecName"></div>
+<div class="form-group"><label>Mobile (optional)</label><input type="tel" id="ecMobile"></div>
+<button class="btn btn-primary btn-block" onclick="saveEditCustomer()">Save Changes</button>
+</div>
+</div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+<div class="modal">
+<div class="modal-header"><h2>My Profile / Company</h2><button class="modal-close" onclick="closeModal('profileModal')">&times;</button></div>
+<div class="modal-body">
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+<div class="profile-logo-preview" id="logoPreview" onclick="document.getElementById('logoInput').click()"><span style="color:var(--gray-400);font-size:.75rem">+ Logo</span></div>
+<div style="font-size:.78rem;color:var(--gray-500)">Tap to upload logo<br>(Used on invoices)</div>
+</div>
+<div class="form-group"><label>Company / Business Name</label><input type="text" id="pCompanyName" placeholder="e.g. Ramesh General Store"></div>
+<div class="form-group"><label>Address</label><textarea id="pAddress" placeholder="e.g. Shop No. 5, Main Market, Delhi"></textarea></div>
+<div class="form-group"><label>Contact Number</label><input type="tel" id="pContact" placeholder="e.g. 9876543210"></div>
+<div class="form-group"><label>GSTIN (optional)</label><input type="text" id="pGSTIN" placeholder="e.g. 29ABCDE1234F1Z5"></div>
+<button class="btn btn-primary btn-block" onclick="saveProfile()">Save Profile</button>
+</div>
+</div>
+</div>
+
+<!-- Default Due Date Modal -->
+<div class="modal-overlay" id="dueDateModal">
+<div class="modal">
+<div class="modal-header"><h2>Default Due Date</h2><button class="modal-close" onclick="closeModal('dueDateModal')">&times;</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Default Due Days (from date of entry)</label><input type="number" id="fDefaultDueDays" placeholder="e.g. 30" min="1"><div class="hint">New Udhaar entries will auto-fill due date based on this.</div></div>
+<button class="btn btn-primary btn-block" onclick="saveDefaultDueDays()">Save</button>
+</div>
+</div>
+</div>
+
+<!-- Inventory Modal -->
+<div class="modal-overlay" id="inventoryModal">
+<div class="modal">
+<div class="modal-header"><h2 id="invModalTitle">Add Inventory Item</h2><button class="modal-close" onclick="closeModal('inventoryModal')">&times;</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Item Name *</label><input type="text" id="invName" placeholder="e.g. Cooking Oil 1L"></div>
+<div class="form-group"><label>Sale Price (&#8377;) *</label><input type="number" id="invPrice" placeholder="e.g. 180" min="0" step="any"></div>
+<div class="form-group"><label>Unit (optional)</label><input type="text" id="invUnit" placeholder="e.g. pcs, kg, ltr, box"></div>
+<div class="form-group"><label>HSN Code (optional)</label><input type="text" id="invHSN" placeholder="e.g. 1507"></div>
+<div class="form-group"><label>Stock Qty (optional)</label><input type="number" id="invStock" placeholder="e.g. 50" min="0"></div>
+<input type="hidden" id="invEditId">
+<button class="btn btn-primary btn-block" onclick="saveInventoryItem()">Save Item</button>
+</div>
+</div>
+</div>
+
+<!-- Create Bill Modal -->
+<div class="modal-overlay" id="createBillModal">
+<div class="modal">
+<div class="modal-header"><h2>Create Sales Bill</h2><button class="modal-close" onclick="closeModal('createBillModal')">&times;</button></div>
+<div class="modal-body">
+<div class="tab-bar">
+<button class="tab-btn active" onclick="setBillTab('inventory',this)">With Inventory</button>
+<button class="tab-btn" onclick="setBillTab('manual',this)">Without Inventory</button>
+</div>
+<div class="form-group"><label>Customer Name *</label><input type="text" id="billCustName" placeholder="e.g. Ramesh Kirana" autocomplete="off" oninput="billCustAutocomplete(this.value)"><div class="autocomplete-list" id="billCustAC"></div></div>
+<div class="form-group"><label>Customer Mobile (optional)</label><input type="tel" id="billCustMobile" placeholder="9876543210"></div>
+<div class="form-group"><label>Bill Date</label><input type="date" id="billDate"></div>
+
+<div id="billInvSection">
+<h3 style="font-size:.9rem;margin:12px 0 8px;font-weight:700">Add Items from Inventory</h3>
+<div class="form-group"><label>Search Item</label><input type="text" id="billInvSearch" placeholder="Type to search..." oninput="searchBillInventory(this.value)"><div class="autocomplete-list" id="billInvAC"></div></div>
+</div>
+
+<div id="billManualSection" style="display:none">
+<h3 style="font-size:.9rem;margin:12px 0 8px;font-weight:700">Add Items Manually</h3>
+<div class="inv-item-row">
+<div class="form-group"><label>Item</label><input type="text" id="manItemName" placeholder="Item name"></div>
+<div class="form-group" style="max-width:80px"><label>Qty</label><input type="number" id="manItemQty" value="1" min="1"></div>
+<div class="form-group" style="max-width:100px"><label>Price</label><input type="number" id="manItemPrice" placeholder="₹" min="0" step="any"></div>
+<button class="btn btn-primary btn-sm" onclick="addManualBillItem()" style="margin-bottom:0;height:42px">+</button>
+</div>
+</div>
+
+<div id="billItemsList" style="margin:12px 0"></div>
+<div style="text-align:right;font-size:1.1rem;font-weight:700;margin:10px 0" id="billTotalDisplay">Total: &#8377;0</div>
+
+<div class="form-group"><label>Note (optional)</label><textarea id="billNote" placeholder="Additional notes"></textarea></div>
+<div class="form-group">
+<label><input type="checkbox" id="billAsUdhaar" checked> Add as Udhaar (credit)</label>
+<div class="hint">If checked, this bill amount will be added as an Udhaar entry.</div>
+</div>
+<button class="btn btn-success btn-block" onclick="saveBill()">Save &amp; Generate Bill</button>
+</div>
+</div>
+</div>
+
+<!-- Bill Preview Modal -->
+<div class="modal-overlay" id="billPreviewModal">
+<div class="modal">
+<div class="modal-header"><h2>Invoice</h2><button class="modal-close" onclick="closeModal('billPreviewModal')">&times;</button></div>
+<div class="modal-body">
+<div id="invoicePreviewArea" class="invoice-preview"></div>
+<div class="btn-group" style="justify-content:center">
+<button class="btn btn-primary btn-sm" onclick="printInvoice()">&#128424; Print</button>
+<button class="btn btn-success btn-sm" onclick="shareWhatsApp()">&#128172; WhatsApp</button>
+<button class="btn btn-outline btn-sm" onclick="downloadInvoiceImage()">&#128190; Save HTML</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Bulk Upload Modal -->
+<div class="modal-overlay" id="bulkUploadModal">
+<div class="modal">
+<div class="modal-header"><h2>Excel / CSV Bulk Upload</h2><button class="modal-close" onclick="closeModal('bulkUploadModal')">&times;</button></div>
+<div class="modal-body">
+<div class="tab-bar">
+<button class="tab-btn active" onclick="setBulkTab('parties',this)">Parties + Dues</button>
+<button class="tab-btn" onclick="setBulkTab('inventory',this)">Inventory Items</button>
+</div>
+<div id="bulkPartiesSection">
+<p style="font-size:.85rem;color:var(--gray-600);margin-bottom:14px;line-height:1.6">Upload a CSV file with columns:<br><strong>Name, Mobile, DueAmount, DueDate, Note</strong></p>
+<button class="btn btn-outline btn-sm" onclick="downloadPartiesTemplate()" style="margin-bottom:12px">&#128196; Download Template CSV</button>
+<div class="upload-area" onclick="startBulkUpload('parties')">
+<div style="font-size:2rem">&#128194;</div>
+<p>Tap to select CSV file</p>
+</div>
+</div>
+<div id="bulkInventorySection" style="display:none">
+<p style="font-size:.85rem;color:var(--gray-600);margin-bottom:14px;line-height:1.6">Upload a CSV file with columns:<br><strong>ItemName, SalePrice, Unit, HSN, Stock</strong></p>
+<button class="btn btn-outline btn-sm" onclick="downloadInventoryTemplate()" style="margin-bottom:12px">&#128196; Download Template CSV</button>
+<div class="upload-area" onclick="startBulkUpload('inventory')">
+<div style="font-size:2rem">&#128194;</div>
+<p>Tap to select CSV file</p>
+</div>
+</div>
+<div id="bulkUploadResult" style="margin-top:10px"></div>
+</div>
+</div>
+</div>
+
+<script>
+// ===== IndexedDB =====
+const DB_NAME='UdhaarManagerProDB';const DB_VERSION=2;let db;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('customers')){const s=d.createObjectStore('customers',{keyPath:'id'});s.createIndex('name','name',{unique:false})}if(!d.objectStoreNames.contains('credits')){const s=d.createObjectStore('credits',{keyPath:'id'});s.createIndex('customerId','customerId',{unique:false});s.createIndex('status','status',{unique:false});s.createIndex('dueDate','dueDate',{unique:false})}if(!d.objectStoreNames.contains('payments')){const s=d.createObjectStore('payments',{keyPath:'id'});s.createIndex('creditEntryId','creditEntryId',{unique:false})}if(!d.objectStoreNames.contains('settings')){d.createObjectStore('settings',{keyPath:'key'})}if(!d.objectStoreNames.contains('inventory')){const s=d.createObjectStore('inventory',{keyPath:'id'});s.createIndex('name','name',{unique:false})}if(!d.objectStoreNames.contains('bills')){const s=d.createObjectStore('bills',{keyPath:'id'});s.createIndex('customerId','customerId',{unique:false})}};r.onsuccess=e=>{db=e.target.result;res(db)};r.onerror=e=>rej(e.target.error)})}
+function genId(){return Date.now().toString(36)+'_'+Math.random().toString(36).substr(2,9)}
+function dbOp(store,mode,fn){return new Promise((res,rej)=>{const tx=db.transaction(store,mode);const st=tx.objectStore(store);const r=fn(st);if(r&&r.onsuccess!==undefined){r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}else{tx.oncomplete=()=>res(r);tx.onerror=()=>rej(tx.error)}})}
+function getAll(s){return dbOp(s,'readonly',st=>st.getAll())}
+function getById(s,id){return dbOp(s,'readonly',st=>st.get(id))}
+function putItem(s,item){return dbOp(s,'readwrite',st=>st.put(item))}
+function deleteItem(s,id){return dbOp(s,'readwrite',st=>st.delete(id))}
+function clearStore(s){return dbOp(s,'readwrite',st=>st.clear())}
+function getByIndex(s,idx,val){return new Promise((res,rej)=>{const tx=db.transaction(s,'readonly');const r=tx.objectStore(s).index(idx).getAll(val);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+
+// ===== Formatting =====
+function formatINR(n){if(n==null||isNaN(n))return'₹0';const neg=n<0;n=Math.abs(n);let s=Math.floor(n).toString();let last3=s.substring(s.length-3);let other=s.substring(0,s.length-3);if(other!=='')last3=','+last3;return(neg?'-':'')+'₹'+other.replace(/\B(?=(\d{2})+(?!\d))/g,",")+last3}
+function formatDate(d){if(!d)return'-';const dt=new Date(d+'T00:00:00');const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return dt.getDate()+' '+m[dt.getMonth()]+' '+dt.getFullYear()}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function addDays(dateStr,days){const d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+days);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function isOverdue(due,out){return due&&out>0&&due<todayStr()}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function csvField(v){return'"'+String(v||'').replace(/"/g,'""')+'"'}
+
+// ===== Toast =====
+function showToast(msg,type=''){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},2800)}
+
+// ===== Confirm =====
+let confirmCb=null;
+function showConfirm(title,msg,okText,okClass){return new Promise(res=>{document.getElementById('confirmTitle').textContent=title;document.getElementById('confirmMsg').textContent=msg;const ok=document.getElementById('confirmOk');ok.textContent=okText||'Confirm';ok.className='btn btn-sm '+(okClass||'btn-danger');document.getElementById('confirmOverlay').classList.add('active');confirmCb=res})}
+document.getElementById('confirmOk').onclick=()=>{document.getElementById('confirmOverlay').classList.remove('active');if(confirmCb)confirmCb(true);confirmCb=null};
+document.getElementById('confirmCancel').onclick=()=>{document.getElementById('confirmOverlay').classList.remove('active');if(confirmCb)confirmCb(false);confirmCb=null};
+
+// ===== Modal =====
+function openModal(id){document.getElementById(id).classList.add('active')}
+function closeModal(id){document.getElementById(id).classList.remove('active')}
+
+// ===== FAB Menu =====
+let fabOpen=false;
+function toggleFabMenu(){fabOpen=!fabOpen;document.getElementById('fabMenu').classList.toggle('show',fabOpen);document.getElementById('fabBtn').textContent=fabOpen?'×':'+'}
+function closeFabMenu(){fabOpen=false;document.getElementById('fabMenu').classList.remove('show');document.getElementById('fabBtn').textContent='+'}
+document.addEventListener('click',e=>{if(!e.target.closest('.fab')&&!e.target.closest('.fab-menu'))closeFabMenu()});
+
+// ===== View Switching =====
+let currentView='dashboard';let currentCustomerId=null;let selectedExistingCustomerId=null;
+const views=['dashboardView','customersView','customerDetailView','inventoryView','billsView','settingsView'];
+function switchView(view,custId){
+currentView=view;
+const viewMap={dashboard:'dashboardView',customers:'customersView',customerDetail:'customerDetailView',inventoryView:'inventoryView',billsView:'billsView',settings:'settingsView'};
+views.forEach(v=>document.getElementById(v).style.display='none');
+document.getElementById(viewMap[view]||view).style.display='block';
+if(view==='customerDetail')document.getElementById('customerDetailView').classList.add('active');
+else document.getElementById('customerDetailView').classList.remove('active');
+document.getElementById('fabBtn').style.display=view==='settings'?'none':'flex';
+document.querySelectorAll('.nav-btn').forEach(b=>{const bv=b.dataset.view;b.classList.toggle('active',bv===view||(view==='customerDetail'&&bv==='customers'))});
+if(view==='dashboard')loadDashboard();
+else if(view==='customers')renderCustomers();
+else if(view==='customerDetail'&&custId){currentCustomerId=custId;renderCustomerDetail(custId)}
+else if(view==='inventoryView')renderInventory();
+else if(view==='billsView')renderBills();
+else if(view==='settings')loadSettings();
+window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+
+// ===== Search =====
+function toggleSearch(){const sb=document.getElementById('searchBar');sb.classList.toggle('active');if(sb.classList.contains('active'))document.getElementById('globalSearch').focus();else{document.getElementById('globalSearch').value='';if(currentView==='dashboard')loadDashboard()}}
+async function handleGlobalSearch(q){if(!q.trim()){if(currentView==='dashboard')loadDashboard();return}switchView('dashboard');const credits=await getAll('credits');const customers=await getAll('customers');const custMap={};customers.forEach(c=>custMap[c.id]=c);const ql=q.toLowerCase();const filtered=credits.filter(c=>{const cu=custMap[c.customerId];const nm=cu?cu.name.toLowerCase():'';return nm.includes(ql)||(c.note||'').toLowerCase().includes(ql)||c.id.toLowerCase().includes(ql)});await renderTxList(filtered,custMap);document.getElementById('listTitle').textContent='Search Results'}
+
+// ===== Filters =====
+let currentFilter='all';
+document.getElementById('filtersBar').addEventListener('click',e=>{const btn=e.target.closest('.filter-btn');if(!btn)return;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentFilter=btn.dataset.filter;loadDashboard()});
+
+// ===== Dashboard =====
+async function loadDashboard(){
+const credits=await getAll('credits');const customers=await getAll('customers');const payments=await getAll('payments');
+const custMap={};customers.forEach(c=>custMap[c.id]=c);
+const paidMap={};payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let tOut=0,tPend=0,tPart=0;
+credits.forEach(cr=>{const pd=paidMap[cr.id]||0;const rem=cr.amount-pd;const st=rem<=0?'paid':(pd>0?'partpaid':'pending');cr._paid=pd;cr._remaining=Math.max(0,rem);cr._status=st;if(st!=='paid'){tOut+=cr._remaining;if(st==='pending')tPend+=cr._remaining;else tPart+=cr._remaining}});
+document.getElementById('totalOutstanding').textContent=formatINR(tOut);
+document.getElementById('totalPending').textContent=formatINR(tPend);
+document.getElementById('totalPartPaid').textContent=formatINR(tPart);
+document.getElementById('totalCustomers').textContent=customers.length;
+let filtered=credits;const today=todayStr();
+if(currentFilter==='pending')filtered=credits.filter(c=>c._status==='pending');
+else if(currentFilter==='partpaid')filtered=credits.filter(c=>c._status==='partpaid');
+else if(currentFilter==='paid')filtered=credits.filter(c=>c._status==='paid');
+else if(currentFilter==='duetoday')filtered=credits.filter(c=>c.dueDate===today&&c._remaining>0);
+else if(currentFilter==='overdue')filtered=credits.filter(c=>c.dueDate<today&&c._remaining>0);
+filtered.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+await renderTxList(filtered,custMap);
+document.getElementById('listTitle').textContent=currentFilter==='all'?'Recent Udhaar':currentFilter.replace(/^\w/,c=>c.toUpperCase())+' Udhaar';
+}
+
+async function renderTxList(credits,custMap){
+const container=document.getElementById('txList');
+if(!credits.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><h3>No entries found</h3><p>Start by adding your first Udhaar entry.</p><button class="btn btn-primary btn-sm" onclick="openAddUdhaar()">+ Add Udhaar</button></div>';return}
+const payments=await getAll('payments');const paidMap={};payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let html='';credits.forEach(cr=>{const cu=custMap[cr.customerId];const nm=cu?cu.name:'Unknown';const pd=paidMap[cr.id]||0;const rem=Math.max(0,cr.amount-pd);const st=rem<=0?'paid':(pd>0?'partpaid':'pending');const od=isOverdue(cr.dueDate,rem);let bc='badge-'+st,bt=st==='paid'?'PAID':(st==='partpaid'?'PART PAID':'PENDING');if(od){bc='badge-overdue';bt='OVERDUE'}
+html+=`<div class="tx-card status-${st}" onclick="openTxDetail('${cr.id}')"><div class="tx-top"><span class="tx-name">${esc(nm)}</span><span class="tx-amount">${formatINR(cr.amount)}</span></div><div class="tx-bottom"><span class="tx-meta">${formatDate(cr.dueDate)}${cr.note?' · '+esc(cr.note.substring(0,25)):''}</span><span class="status-badge ${bc}">${bt}</span></div>${rem>0&&rem!==cr.amount?'<div style="font-size:.78rem;color:var(--gray-500);margin-top:3px">Remaining: '+formatINR(rem)+'</div>':''}</div>`});
+container.innerHTML=html;
+}
+
+// ===== TX Detail =====
+async function openTxDetail(creditId){
+const cr=await getById('credits',creditId);if(!cr)return;
+const cu=await getById('customers',cr.customerId);
+const pays=await getByIndex('payments','creditEntryId',creditId);pays.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+const tp=pays.reduce((s,p)=>s+p.amount,0);const rem=Math.max(0,cr.amount-tp);const st=rem<=0?'paid':(tp>0?'partpaid':'pending');
+const od=isOverdue(cr.dueDate,rem);let bc='badge-'+st,bt=st==='paid'?'PAID':(st==='partpaid'?'PART PAID':'PENDING');if(od){bc='badge-overdue';bt='OVERDUE'}
+let html=`<div class="detail-row"><span class="dr-label">ID</span><span class="dr-value" style="font-size:.72rem;color:var(--gray-400)">${cr.id}</span></div>
+<div class="detail-row"><span class="dr-label">Customer</span><span class="dr-value">${esc(cu?cu.name:'Unknown')}</span></div>
+<div class="detail-row"><span class="dr-label">Amount</span><span class="dr-value">${formatINR(cr.amount)}</span></div>
+<div class="detail-row"><span class="dr-label">Paid</span><span class="dr-value" style="color:var(--success)">${formatINR(tp)}</span></div>
+<div class="detail-row"><span class="dr-label">Remaining</span><span class="dr-value" style="color:${rem>0?'var(--danger)':'var(--success)'}">${formatINR(rem)}</span></div>
+<div class="detail-row"><span class="dr-label">Due Date</span><span class="dr-value">${formatDate(cr.dueDate)}</span></div>
+<div class="detail-row"><span class="dr-label">Status</span><span class="status-badge ${bc}">${bt}</span></div>
+${cr.note?'<div class="detail-row"><span class="dr-label">Note</span><span class="dr-value">'+esc(cr.note)+'</span></div>':''}
+<div class="detail-row"><span class="dr-label">Created</span><span class="dr-value">${formatDate(cr.createdAt.substring(0,10))}</span></div>`;
+if(pays.length){html+='<h3 style="margin-top:18px;margin-bottom:10px;font-size:.9rem">Payment History</h3>';pays.forEach(p=>{html+=`<div class="payment-item"><div><span class="p-amount">+${formatINR(p.amount)}</span><div class="p-date">${formatDate(p.paymentDate)}</div>${p.note?'<div class="p-note">'+esc(p.note)+'</div>':''}</div><button class="btn btn-outline btn-sm" style="font-size:.68rem" onclick="deletePayment('${p.id}','${cr.id}')">Delete</button></div>`})}
+html+='<div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">';
+if(rem>0)html+=`<button class="btn btn-success btn-sm" onclick="openPaymentModal('${cr.id}')">Record Payment</button>`;
+html+=`<button class="btn btn-outline btn-sm" onclick="viewCustFromTx('${cr.customerId}')">View Customer</button>`;
+html+=`<button class="btn btn-danger btn-sm" onclick="deleteCredit('${cr.id}')">Delete Entry</button></div>`;
+document.getElementById('txDetailBody').innerHTML=html;openModal('txDetailModal');
+}
+function viewCustFromTx(cid){closeModal('txDetailModal');switchView('customerDetail',cid)}
+
+// ===== Customers =====
+async function renderCustomers(q){
+const customers=await getAll('customers');const credits=await getAll('credits');const payments=await getAll('payments');
+const paidMap={};payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+const cs={};credits.forEach(cr=>{if(!cs[cr.customerId])cs[cr.customerId]={total:0,paid:0,count:0,last:''};const s=cs[cr.customerId];s.total+=cr.amount;s.paid+=(paidMap[cr.id]||0);s.count++;if(cr.createdAt>s.last)s.last=cr.createdAt});
+let list=customers.map(c=>{const s=cs[c.id]||{total:0,paid:0,count:0,last:''};return{...c,totalUdhaar:s.total,totalPaid:s.paid,outstanding:s.total-s.paid,txCount:s.count,lastTx:s.last}});
+list.sort((a,b)=>b.outstanding-a.outstanding||a.name.localeCompare(b.name));
+if(q){const ql=q.toLowerCase();list=list.filter(c=>c.name.toLowerCase().includes(ql)||(c.mobile||'').includes(q))}
+const el=document.getElementById('customerList');
+if(!list.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><h3>No customers yet</h3><p>Start by adding your first Udhaar entry.</p></div>';return}
+el.innerHTML=list.map(c=>`<div class="tx-card" onclick="switchView('customerDetail','${c.id}')"><div class="tx-top"><span class="tx-name">${esc(c.name)}</span><span class="tx-amount" style="color:${c.outstanding>0?'var(--danger)':'var(--success)'}">${formatINR(c.outstanding)}</span></div><div class="tx-bottom"><span class="tx-meta">${c.txCount} txn${c.txCount!==1?'s':''} ${c.mobile?'· '+c.mobile:''}</span><span style="font-size:.73rem;color:var(--gray-400)">${c.lastTx?formatDate(c.lastTx.substring(0,10)):''}</span></div></div>`).join('');
+}
+
+// ===== Customer Detail =====
+async function renderCustomerDetail(cid){
+const cu=await getById('customers',cid);if(!cu){switchView('dashboard');return}
+const credits=await getByIndex('credits','customerId',cid);const payments=await getAll('payments');
+const paidMap={};payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});
+let tc=0,tp=0;credits.forEach(cr=>{tc+=cr.amount;tp+=(paidMap[cr.id]||0)});const out=tc-tp;
+document.getElementById('customerHeader').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.8rem;color:var(--gray-500);cursor:pointer" onclick="switchView('customers')">&#8592; Back</div><div class="cname">${esc(cu.name)}</div>${cu.mobile?'<div class="cmobile">'+esc(cu.mobile)+'</div>':''}</div><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openEditCustomer('${cu.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteCustomer('${cu.id}')">Del</button></div></div><div class="customer-stats"><div class="cstat credit"><div class="cstat-val">${formatINR(tc)}</div><div class="cstat-label">Total Credit</div></div><div class="cstat paid"><div class="cstat-val">${formatINR(tp)}</div><div class="cstat-label">Total Paid</div></div><div class="cstat outstanding"><div class="cstat-val">${formatINR(out)}</div><div class="cstat-label">Outstanding</div></div></div>`;
+credits.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+const el=document.getElementById('customerTxList');
+if(!credits.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><h3>No transactions</h3></div>';return}
+el.innerHTML=credits.map(cr=>{const pd=paidMap[cr.id]||0;const rem=Math.max(0,cr.amount-pd);const st=rem<=0?'paid':(pd>0?'partpaid':'pending');const od=isOverdue(cr.dueDate,rem);let bc='badge-'+st,bt=st==='paid'?'PAID':(st==='partpaid'?'PART PAID':'PENDING');if(od){bc='badge-overdue';bt='OVERDUE'}return`<div class="tx-card status-${st}" onclick="openTxDetail('${cr.id}')"><div class="tx-top"><span class="tx-name">${formatINR(cr.amount)}</span><span class="status-badge ${bc}">${bt}</span></div><div class="tx-bottom"><span class="tx-meta">${formatDate(cr.dueDate)}${cr.note?' · '+esc(cr.note.substring(0,25)):''}</span><span class="tx-meta">Rem: ${formatINR(rem)}</span></div>${rem>0?'<div style="margin-top:7px"><button class="btn btn-success btn-sm" onclick="event.stopPropagation();openPaymentModal(\''+cr.id+'\')">Record Payment</button></div>':''}</div>`}).join('');
+}
+
+// ===== Add Udhaar =====
+async function getDefaultDueDays(){try{const s=await getById('settings','defaultDueDays');return s?parseInt(s.value)||30:30}catch(e){return 30}}
+async function openAddUdhaar(){
+selectedExistingCustomerId=null;
+['fCustName','fCustMobile','fAmount','fNote'].forEach(id=>document.getElementById(id).value='');
+document.getElementById('dupWarning').classList.remove('show');
+document.getElementById('custAutocomplete').classList.remove('show');
+document.getElementById('fCustName').disabled=false;
+document.getElementById('fCustMobile').disabled=false;
+const dd=await getDefaultDueDays();
+document.getElementById('fDueDate').value=addDays(todayStr(),dd);
+openModal('addUdhaarModal');document.getElementById('fCustName').focus();
+}
+function openAddUdhaarForCustomer(){openAddUdhaar().then(()=>{if(currentCustomerId){getById('customers',currentCustomerId).then(c=>{if(c){selectedExistingCustomerId=c.id;document.getElementById('fCustName').value=c.name;document.getElementById('fCustName').disabled=true;document.getElementById('fCustMobile').value=c.mobile||'';document.getElementById('fCustMobile').disabled=true}})}})}
+async function checkDuplicate(val){
+selectedExistingCustomerId=null;document.getElementById('fCustName').disabled=false;document.getElementById('fCustMobile').disabled=false;
+const dw=document.getElementById('dupWarning');const ac=document.getElementById('custAutocomplete');
+if(!val.trim()){dw.classList.remove('show');ac.classList.remove('show');return}
+const custs=await getAll('customers');const vl=val.toLowerCase().trim();const matches=custs.filter(c=>c.name.toLowerCase().includes(vl));
+if(matches.length&&val.length>=2){ac.innerHTML=matches.slice(0,5).map(c=>`<div class="autocomplete-item" onclick="selectAutocomplete('${c.id}')">${esc(c.name)}${c.mobile?' <span style=color:var(--gray-400)>'+c.mobile+'</span>':''}</div>`).join('');ac.classList.add('show')}else ac.classList.remove('show');
+const exact=custs.find(c=>c.name.toLowerCase()===vl);
+if(exact){document.getElementById('dupWarningText').textContent=exact.name+' already exists. Add this Udhaar to the existing customer?';dw.classList.add('show');dw.dataset.custId=exact.id}else dw.classList.remove('show');
+}
+async function selectAutocomplete(cid){const c=await getById('customers',cid);if(c){selectedExistingCustomerId=c.id;document.getElementById('fCustName').value=c.name;document.getElementById('fCustMobile').value=c.mobile||'';document.getElementById('fCustName').disabled=true;document.getElementById('fCustMobile').disabled=true;document.getElementById('custAutocomplete').classList.remove('show');document.getElementById('dupWarning').classList.remove('show')}}
+function useDuplicateCustomer(){const cid=document.getElementById('dupWarning').dataset.custId;if(cid)selectAutocomplete(cid)}
+function createNewCustomer(){selectedExistingCustomerId=null;document.getElementById('dupWarning').classList.remove('show');document.getElementById('fCustName').disabled=false;document.getElementById('fCustMobile').disabled=false}
+
+async function saveUdhaar(){
+const name=document.getElementById('fCustName').value.trim();const mobile=document.getElementById('fCustMobile').value.trim();
+const amount=parseFloat(document.getElementById('fAmount').value);const dueDate=document.getElementById('fDueDate').value;const note=document.getElementById('fNote').value.trim();
+if(!name){showToast('Customer name is required','error');return}
+if(!amount||amount<=0){showToast('Amount must be greater than zero','error');return}
+if(!dueDate){showToast('Due date is required','error');return}
+const now=new Date().toISOString();let customerId=selectedExistingCustomerId;
+if(!customerId){const custs=await getAll('customers');const ex=custs.find(c=>c.name.toLowerCase()===name.toLowerCase());if(ex){const ok=await showConfirm('Customer Exists',ex.name+' already exists. Use existing?','Use Existing','btn-primary');if(ok)customerId=ex.id;else return}
+if(!customerId){customerId=genId();await putItem('customers',{id:customerId,name,mobile,createdAt:now,updatedAt:now})}}
+else if(mobile){const cu=await getById('customers',customerId);if(cu&&cu.mobile!==mobile){cu.mobile=mobile;cu.updatedAt=now;await putItem('customers',cu)}}
+await putItem('credits',{id:genId(),customerId,amount,dueDate,note,createdAt:now,status:'pending'});
+closeModal('addUdhaarModal');showToast('Udhaar added successfully','success');
+if(currentView==='dashboard')loadDashboard();else if(currentView==='customerDetail'&&currentCustomerId===customerId)renderCustomerDetail(customerId);else if(currentView==='customers')renderCustomers();
+}
+
+// ===== Payments =====
+let currentPaymentCreditId=null;
+async function openPaymentModal(creditId){
+closeModal('txDetailModal');currentPaymentCreditId=creditId;
+const cr=await getById('credits',creditId);if(!cr)return;
+const cu=await getById('customers',cr.customerId);const pays=await getByIndex('payments','creditEntryId',creditId);
+const tp=pays.reduce((s,p)=>s+p.amount,0);const rem=Math.max(0,cr.amount-tp);
+if(rem<=0){const ok=await showConfirm('Already Paid','This entry is already marked Paid. Are you sure you want to change its status?','Continue','btn-primary');if(!ok)return}
+document.getElementById('paymentInfo').innerHTML=`<div class="detail-row"><span class="dr-label">Customer</span><span class="dr-value">${esc(cu?cu.name:'')}</span></div><div class="detail-row"><span class="dr-label">Original</span><span class="dr-value">${formatINR(cr.amount)}</span></div><div class="detail-row"><span class="dr-label">Paid</span><span class="dr-value" style="color:var(--success)">${formatINR(tp)}</span></div><div class="detail-row"><span class="dr-label">Remaining</span><span class="dr-value" style="color:var(--danger)">${formatINR(rem)}</span></div>`;
+document.getElementById('pRemaining').textContent='Maximum: '+formatINR(rem);
+document.getElementById('pAmount').value='';document.getElementById('pAmount').max=rem;
+document.getElementById('pDate').value=todayStr();document.getElementById('pNote').value='';
+openModal('paymentModal');document.getElementById('pAmount').focus();
+}
+async function savePayment(){
+const amount=parseFloat(document.getElementById('pAmount').value);const pDate=document.getElementById('pDate').value;const pNote=document.getElementById('pNote').value.trim();
+if(!amount||amount<=0){showToast('Payment amount must be greater than zero','error');return}
+const cr=await getById('credits',currentPaymentCreditId);if(!cr)return;
+const pays=await getByIndex('payments','creditEntryId',cr.id);const tp=pays.reduce((s,p)=>s+p.amount,0);const rem=cr.amount-tp;
+if(amount>rem+0.01){showToast('Payment cannot exceed remaining balance','error');return}
+await putItem('payments',{id:genId(),creditEntryId:cr.id,amount,paymentDate:pDate||todayStr(),note:pNote,createdAt:new Date().toISOString()});
+const np=tp+amount;cr.status=(cr.amount-np)<=0?'paid':(np>0?'partpaid':'pending');await putItem('credits',cr);
+closeModal('paymentModal');showToast('Payment recorded','success');
+if(currentView==='dashboard')loadDashboard();else if(currentView==='customerDetail')renderCustomerDetail(currentCustomerId);
+}
+
+// ===== Delete =====
+async function deleteCredit(cid){const ok=await showConfirm('Delete Entry','Delete this Udhaar entry and all payments?','Delete','btn-danger');if(!ok)return;const pays=await getByIndex('payments','creditEntryId',cid);for(const p of pays)await deleteItem('payments',p.id);await deleteItem('credits',cid);closeModal('txDetailModal');showToast('Entry deleted','success');if(currentView==='dashboard')loadDashboard();else if(currentView==='customerDetail')renderCustomerDetail(currentCustomerId)}
+async function deletePayment(pid,cid){const ok=await showConfirm('Delete Payment','Delete this payment record?','Delete','btn-danger');if(!ok)return;await deleteItem('payments',pid);const cr=await getById('credits',cid);if(cr){const pays=await getByIndex('payments','creditEntryId',cid);const tp=pays.reduce((s,p)=>s+p.amount,0);cr.status=(cr.amount-tp)<=0?'paid':(tp>0?'partpaid':'pending');await putItem('credits',cr)}closeModal('txDetailModal');showToast('Payment deleted','success');if(currentView==='dashboard')loadDashboard();else if(currentView==='customerDetail')renderCustomerDetail(currentCustomerId)}
+async function deleteCustomer(cid){const credits=await getByIndex('credits','customerId',cid);const ok=await showConfirm('Delete Customer','Delete customer and '+credits.length+' entries with all payments?','Delete All','btn-danger');if(!ok)return;for(const cr of credits){const pays=await getByIndex('payments','creditEntryId',cr.id);for(const p of pays)await deleteItem('payments',p.id);await deleteItem('credits',cr.id)}await deleteItem('customers',cid);showToast('Customer deleted','success');switchView('customers')}
+
+// ===== Edit Customer =====
+let editingCustomerId=null;
+async function openEditCustomer(cid){editingCustomerId=cid;const c=await getById('customers',cid);if(!c)return;document.getElementById('ecName').value=c.name;document.getElementById('ecMobile').value=c.mobile||'';openModal('editCustomerModal')}
+async function saveEditCustomer(){const name=document.getElementById('ecName').value.trim();const mobile=document.getElementById('ecMobile').value.trim();if(!name){showToast('Name is required','error');return}const c=await getById('customers',editingCustomerId);if(!c)return;if(name.toLowerCase()!==c.name.toLowerCase()){const all=await getAll('customers');if(all.find(x=>x.name.toLowerCase()===name.toLowerCase()&&x.id!==c.id)){showToast('Another customer exists with this name','error');return}}c.name=name;c.mobile=mobile;c.updatedAt=new Date().toISOString();await putItem('customers',c);closeModal('editCustomerModal');showToast('Customer updated','success');renderCustomerDetail(editingCustomerId)}
+
+// ===== Inventory =====
+async function renderInventory(q){
+const items=await getAll('inventory');let list=items;
+if(q){const ql=q.toLowerCase();list=items.filter(i=>i.name.toLowerCase().includes(ql))}
+list.sort((a,b)=>a.name.localeCompare(b.name));
+const el=document.getElementById('inventoryList');
+if(!list.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><h3>No inventory items</h3><p>Add items to use in sales bills.</p></div>';return}
+el.innerHTML=list.map(i=>`<div class="inv-card"><div><div class="inv-name">${esc(i.name)}</div><div class="inv-meta">${i.unit||'pcs'}${i.hsn?' · HSN: '+i.hsn:''}${i.stock!=null?' · Stock: '+i.stock:''}</div></div><div style="display:flex;align-items:center;gap:10px"><div class="inv-price">${formatINR(i.salePrice)}</div><button class="btn btn-outline btn-sm" onclick="openEditInventory('${i.id}')">✏️</button><button class="btn btn-outline btn-sm" onclick="deleteInventoryItem('${i.id}')">🗑</button></div></div>`).join('');
+}
+function openAddInventory(){document.getElementById('invModalTitle').textContent='Add Inventory Item';['invName','invPrice','invUnit','invHSN','invStock'].forEach(id=>document.getElementById(id).value='');document.getElementById('invEditId').value='';openModal('inventoryModal')}
+async function openEditInventory(id){const item=await getById('inventory',id);if(!item)return;document.getElementById('invModalTitle').textContent='Edit Item';document.getElementById('invName').value=item.name;document.getElementById('invPrice').value=item.salePrice;document.getElementById('invUnit').value=item.unit||'';document.getElementById('invHSN').value=item.hsn||'';document.getElementById('invStock').value=item.stock!=null?item.stock:'';document.getElementById('invEditId').value=id;openModal('inventoryModal')}
+async function saveInventoryItem(){const name=document.getElementById('invName').value.trim();const price=parseFloat(document.getElementById('invPrice').value);if(!name){showToast('Item name required','error');return}if(isNaN(price)||price<0){showToast('Valid sale price required','error');return}const unit=document.getElementById('invUnit').value.trim()||'pcs';const hsn=document.getElementById('invHSN').value.trim();const stock=document.getElementById('invStock').value?parseInt(document.getElementById('invStock').value):null;const editId=document.getElementById('invEditId').value;const now=new Date().toISOString();if(editId){const item=await getById('inventory',editId);if(item){item.name=name;item.salePrice=price;item.unit=unit;item.hsn=hsn;item.stock=stock;item.updatedAt=now;await putItem('inventory',item)}}else{await putItem('inventory',{id:genId(),name,salePrice:price,unit,hsn,stock,createdAt:now,updatedAt:now})}closeModal('inventoryModal');showToast('Item saved','success');renderInventory()}
+async function deleteInventoryItem(id){const ok=await showConfirm('Delete Item','Delete this inventory item?','Delete','btn-danger');if(!ok)return;await deleteItem('inventory',id);showToast('Item deleted','success');renderInventory()}
+
+// ===== Bills =====
+let billItems=[];let billTab='inventory';let currentBillPreview=null;
+function setBillTab(tab,btn){billTab=tab;document.querySelectorAll('#createBillModal .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('billInvSection').style.display=tab==='inventory'?'block':'none';document.getElementById('billManualSection').style.display=tab==='manual'?'block':'none'}
+async function openCreateBill(){
+billItems=[];billTab='inventory';
+['billCustName','billCustMobile','billNote','billInvSearch','manItemName','manItemPrice'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).value=''});
+document.getElementById('manItemQty').value='1';
+document.getElementById('billDate').value=todayStr();
+document.getElementById('billAsUdhaar').checked=true;
+document.getElementById('billCustAC').classList.remove('show');
+document.getElementById('billInvAC').classList.remove('show');
+updateBillItemsUI();openModal('createBillModal');
+const tabs=document.querySelectorAll('#createBillModal .tab-btn');tabs.forEach(t=>t.classList.remove('active'));tabs[0].classList.add('active');
+document.getElementById('billInvSection').style.display='block';document.getElementById('billManualSection').style.display='none';
+}
+async function billCustAutocomplete(val){const ac=document.getElementById('billCustAC');if(!val.trim()){ac.classList.remove('show');return}const custs=await getAll('customers');const vl=val.toLowerCase();const m=custs.filter(c=>c.name.toLowerCase().includes(vl)).slice(0,5);if(m.length){ac.innerHTML=m.map(c=>`<div class="autocomplete-item" onclick="selectBillCust('${c.id}')">${esc(c.name)}${c.mobile?' · '+c.mobile:''}</div>`).join('');ac.classList.add('show')}else ac.classList.remove('show')}
+async function selectBillCust(cid){const c=await getById('customers',cid);if(c){document.getElementById('billCustName').value=c.name;document.getElementById('billCustMobile').value=c.mobile||'';document.getElementById('billCustAC').classList.remove('show')}}
+async function searchBillInventory(val){const ac=document.getElementById('billInvAC');if(!val.trim()){ac.classList.remove('show');return}const items=await getAll('inventory');const vl=val.toLowerCase();const m=items.filter(i=>i.name.toLowerCase().includes(vl)).slice(0,6);if(m.length){ac.innerHTML=m.map(i=>`<div class="autocomplete-item" onclick="addInvBillItem('${i.id}')">${esc(i.name)} — ${formatINR(i.salePrice)}/${i.unit||'pcs'}</div>`).join('');ac.classList.add('show')}else{ac.innerHTML='<div class="autocomplete-item" style="color:var(--gray-400)">No items found</div>';ac.classList.add('show')}}
+async function addInvBillItem(iid){const item=await getById('inventory',iid);if(!item)return;const existing=billItems.find(b=>b.itemId===iid);if(existing){existing.qty++;} else{billItems.push({itemId:iid,name:item.name,price:item.salePrice,qty:1,unit:item.unit||'pcs'})}document.getElementById('billInvSearch').value='';document.getElementById('billInvAC').classList.remove('show');updateBillItemsUI()}
+function addManualBillItem(){const name=document.getElementById('manItemName').value.trim();const qty=parseInt(document.getElementById('manItemQty').value)||1;const price=parseFloat(document.getElementById('manItemPrice').value);if(!name){showToast('Item name required','error');return}if(!price||price<=0){showToast('Valid price required','error');return}billItems.push({itemId:null,name,price,qty,unit:'pcs'});document.getElementById('manItemName').value='';document.getElementById('manItemPrice').value='';document.getElementById('manItemQty').value='1';updateBillItemsUI()}
+function removeBillItem(idx){billItems.splice(idx,1);updateBillItemsUI()}
+function changeBillItemQty(idx,delta){billItems[idx].qty=Math.max(1,billItems[idx].qty+delta);updateBillItemsUI()}
+function updateBillItemsUI(){const el=document.getElementById('billItemsList');const total=billItems.reduce((s,i)=>s+i.price*i.qty,0);
+if(!billItems.length){el.innerHTML='<div style="text-align:center;color:var(--gray-400);padding:16px;font-size:.85rem">No items added yet</div>'}
+else{el.innerHTML=billItems.map((item,idx)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><div style="flex:1"><div style="font-weight:600;font-size:.85rem">${esc(item.name)}</div><div style="font-size:.75rem;color:var(--gray-500)">${formatINR(item.price)} × ${item.qty} = ${formatINR(item.price*item.qty)}</div></div><div style="display:flex;align-items:center;gap:4px"><button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:.8rem" onclick="changeBillItemQty(${idx},-1)">−</button><span style="font-size:.85rem;font-weight:600;min-width:20px;text-align:center">${item.qty}</span><button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:.8rem" onclick="changeBillItemQty(${idx},1)">+</button><button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:.8rem;color:var(--danger)" onclick="removeBillItem(${idx})">×</button></div></div>`).join('')}
+document.getElementById('billTotalDisplay').textContent='Total: '+formatINR(total);
+}
+
+async function saveBill(){
+const custName=document.getElementById('billCustName').value.trim();const custMobile=document.getElementById('billCustMobile').value.trim();const billDate=document.getElementById('billDate').value||todayStr();const billNote=document.getElementById('billNote').value.trim();const asUdhaar=document.getElementById('billAsUdhaar').checked;
+if(!custName){showToast('Customer name required','error');return}if(!billItems.length){showToast('Add at least one item','error');return}
+const total=billItems.reduce((s,i)=>s+i.price*i.qty,0);if(total<=0){showToast('Bill total must be > 0','error');return}
+const now=new Date().toISOString();
+let customerId=null;const custs=await getAll('customers');const ex=custs.find(c=>c.name.toLowerCase()===custName.toLowerCase());
+if(ex){customerId=ex.id;if(custMobile&&ex.mobile!==custMobile){ex.mobile=custMobile;ex.updatedAt=now;await putItem('customers',ex)}}
+else{customerId=genId();await putItem('customers',{id:customerId,name:custName,mobile:custMobile,createdAt:now,updatedAt:now})}
+const billId=genId();const billNo='INV-'+Date.now().toString().slice(-8);
+await putItem('bills',{id:billId,billNo,customerId,customerName:custName,customerMobile:custMobile,items:JSON.parse(JSON.stringify(billItems)),total,billDate,note:billNote,asUdhaar,createdAt:now});
+for(const bi of billItems){if(bi.itemId){const item=await getById('inventory',bi.itemId);if(item&&item.stock!=null){item.stock=Math.max(0,item.stock-bi.qty);item.updatedAt=now;await putItem('inventory',item)}}}
+if(asUdhaar){const dd=await getDefaultDueDays();await putItem('credits',{id:genId(),customerId,amount:total,dueDate:addDays(billDate,dd),note:'Bill #'+billNo+(billNote?' - '+billNote:''),createdAt:now,status:'pending'})}
+closeModal('createBillModal');showToast('Bill created','success');
+showBillPreview(billId);
+if(currentView==='dashboard')loadDashboard();
+}
+
+async function showBillPreview(billId){
+const bill=await getById('bills',billId);if(!bill)return;
+const profile=await loadProfileData();
+currentBillPreview=bill;
+let logo='';if(profile.logo){logo=`<img src="${profile.logo}" style="max-height:50px;max-width:120px;margin-bottom:6px">`}
+let html=`<div class="inv-header">${logo}<h2>${esc(profile.companyName||'My Business')}</h2>`;
+if(profile.address)html+=`<p>${esc(profile.address)}</p>`;
+if(profile.contact)html+=`<p>Tel: ${esc(profile.contact)}</p>`;
+if(profile.gstin)html+=`<p>GSTIN: ${esc(profile.gstin)}</p>`;
+html+=`</div><hr style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:8px"><div><strong>Bill To:</strong> ${esc(bill.customerName)}${bill.customerMobile?'<br>'+bill.customerMobile:''}</div><div style="text-align:right"><strong>Invoice:</strong> ${bill.billNo}<br>${formatDate(bill.billDate)}</div></div>`;
+html+=`<table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>`;
+bill.items.forEach((item,i)=>{html+=`<tr><td>${i+1}</td><td>${esc(item.name)}</td><td>${item.qty}</td><td>${formatINR(item.price)}</td><td>${formatINR(item.price*item.qty)}</td></tr>`});
+html+=`</tbody></table><div class="inv-total">Grand Total: ${formatINR(bill.total)}</div>`;
+if(bill.note)html+=`<p style="font-size:.78rem;color:var(--gray-500);margin-top:8px">Note: ${esc(bill.note)}</p>`;
+if(bill.asUdhaar)html+=`<p style="font-size:.78rem;color:var(--warning);margin-top:4px">Added as Udhaar (Credit)</p>`;
+document.getElementById('invoicePreviewArea').innerHTML=html;
+openModal('billPreviewModal');
+}
+
+async function renderBills(){
+const bills=await getAll('bills');bills.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+const el=document.getElementById('billsList');
+if(!bills.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🧾</div><h3>No bills yet</h3><p>Create your first sales bill.</p></div>';return}
+el.innerHTML=bills.map(b=>`<div class="tx-card" onclick="showBillPreview('${b.id}')"><div class="tx-top"><span class="tx-name">${esc(b.customerName)}</span><span class="tx-amount">${formatINR(b.total)}</span></div><div class="tx-bottom"><span class="tx-meta">${b.billNo} · ${formatDate(b.billDate)}</span><span class="tx-meta">${b.items.length} item${b.items.length>1?'s':''}</span></div></div>`).join('');
+}
+
+// ===== Print / Share =====
+function printInvoice(){const content=document.getElementById('invoicePreviewArea').innerHTML;const w=window.open('','_blank','width=800,height=600');w.document.write(`<!DOCTYPE html><html><head><title>Invoice</title><style>body{font-family:sans-serif;padding:20px;font-size:14px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f3f4f6}.inv-header{text-align:center;margin-bottom:12px}.inv-header h2{margin:0}.inv-header p{margin:2px 0;color:#666}.inv-total{text-align:right;font-size:18px;font-weight:bold;margin-top:10px}@media print{body{padding:0}}</style></head><body>${content}<script>setTimeout(()=>{window.print();window.close()},300)<\/script></body></html>`);w.document.close()}
+
+function shareWhatsApp(){
+if(!currentBillPreview)return;
+const b=currentBillPreview;
+let text=`*Invoice ${b.billNo}*\n`;
+text+=`Date: ${formatDate(b.billDate)}\n`;
+text+=`Customer: ${b.customerName}\n\n`;
+text+=`*Items:*\n`;
+b.items.forEach((item,i)=>{text+=`${i+1}. ${item.name} × ${item.qty} = ${formatINR(item.price*item.qty)}\n`});
+text+=`\n*Total: ${formatINR(b.total)}*\n`;
+if(b.note)text+=`Note: ${b.note}\n`;
+if(b.asUdhaar)text+=`\n(Added as Udhaar/Credit)`;
+const encoded=encodeURIComponent(text);
+const phone=b.customerMobile?b.customerMobile.replace(/\D/g,''):'';
+const url=phone?`https://wa.me/91${phone}?text=${encoded}`:`https://wa.me/?text=${encoded}`;
+window.open(url,'_blank');
+}
+
+function downloadInvoiceImage(){
+const content=document.getElementById('invoicePreviewArea').innerHTML;
+const blob=new Blob([`<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:20px;font-size:14px;max-width:600px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f3f4f6}.inv-header{text-align:center}.inv-header h2{margin:0}.inv-header p{margin:2px 0;color:#666}.inv-total{text-align:right;font-size:18px;font-weight:bold;margin-top:10px}</style></head><body>${content}</body></html>`],{type:'text/html'});
+const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='invoice-'+(currentBillPreview?currentBillPreview.billNo:'bill')+'.html';a.click();URL.revokeObjectURL(url);
+showToast('Invoice saved as HTML','success');
+}
+
+// ===== Profile =====
+async function loadProfileData(){try{const cn=await getById('settings','companyName');const ad=await getById('settings','address');const ct=await getById('settings','contact');const gs=await getById('settings','gstin');const lg=await getById('settings','logo');return{companyName:cn?cn.value:'',address:ad?ad.value:'',contact:ct?ct.value:'',gstin:gs?gs.value:'',logo:lg?lg.value:''}}catch(e){return{companyName:'',address:'',contact:'',gstin:'',logo:''}}}
+async function openProfileModal(){const p=await loadProfileData();document.getElementById('pCompanyName').value=p.companyName;document.getElementById('pAddress').value=p.address;document.getElementById('pContact').value=p.contact;document.getElementById('pGSTIN').value=p.gstin;const lp=document.getElementById('logoPreview');if(p.logo){lp.innerHTML=`<img src="${p.logo}">`}else{lp.innerHTML='<span style="color:var(--gray-400);font-size:.75rem">+ Logo</span>'}openModal('profileModal')}
+async function saveProfile(){const cn=document.getElementById('pCompanyName').value.trim();const ad=document.getElementById('pAddress').value.trim();const ct=document.getElementById('pContact').value.trim();const gs=document.getElementById('pGSTIN').value.trim();await putItem('settings',{key:'companyName',value:cn});await putItem('settings',{key:'address',value:ad});await putItem('settings',{key:'contact',value:ct});await putItem('settings',{key:'gstin',value:gs});if(cn)document.getElementById('appTitle').textContent='₹ '+cn;closeModal('profileModal');showToast('Profile saved','success')}
+function handleLogoUpload(e){const file=e.target.files[0];e.target.value='';if(!file)return;if(file.size>500000){showToast('Logo must be under 500KB','error');return}const reader=new FileReader();reader.onload=async function(ev){const dataUrl=ev.target.result;await putItem('settings',{key:'logo',value:dataUrl});document.getElementById('logoPreview').innerHTML=`<img src="${dataUrl}">`;showToast('Logo uploaded','success')};reader.readAsDataURL(file)}
+
+// ===== Default Due Date =====
+async function openDefaultDueDateModal(){try{const s=await getById('settings','defaultDueDays');document.getElementById('fDefaultDueDays').value=s?s.value:'30'}catch(e){document.getElementById('fDefaultDueDays').value='30'}openModal('dueDateModal')}
+async function saveDefaultDueDays(){const v=parseInt(document.getElementById('fDefaultDueDays').value)||30;await putItem('settings',{key:'defaultDueDays',value:v.toString()});document.getElementById('defaultDueDaysDisplay').textContent=v+' days';closeModal('dueDateModal');showToast('Default due date updated','success')}
+
+// ===== Backup / Restore =====
+async function doBackup(){const data={version:2,app:'UdhaarManagerPro',backupDate:new Date().toISOString(),customers:await getAll('customers'),credits:await getAll('credits'),payments:await getAll('payments'),inventory:await getAll('inventory'),bills:await getAll('bills'),settings:await getAll('settings')};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date();a.href=url;a.download='udhaar-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';a.click();URL.revokeObjectURL(url);showToast('Backup created','success')}
+async function handleRestoreFile(event){const file=event.target.files[0];event.target.value='';if(!file)return;try{const text=await file.text();const data=JSON.parse(text);if(!data.app||!data.customers||!data.credits||!data.payments){showToast('Invalid backup file','error');return}const ok=await showConfirm('Restore Backup','Existing local data will be replaced. Continue?','Restore','btn-primary');if(!ok)return;await clearStore('customers');await clearStore('credits');await clearStore('payments');await clearStore('settings');for(const c of data.customers)await putItem('customers',c);for(const c of data.credits)await putItem('credits',c);for(const p of data.payments)await putItem('payments',p);if(data.settings)for(const s of data.settings)await putItem('settings',s);if(data.inventory){try{await clearStore('inventory');for(const i of data.inventory)await putItem('inventory',i)}catch(e){}}if(data.bills){try{await clearStore('bills');for(const b of data.bills)await putItem('bills',b)}catch(e){}}showToast('Backup restored','success');switchView('dashboard')}catch(e){showToast('Error: '+e.message,'error')}}
+
+// ===== Export CSV =====
+async function exportCSV(){const credits=await getAll('credits');const customers=await getAll('customers');const payments=await getAll('payments');const custMap={};customers.forEach(c=>custMap[c.id]=c);const paidMap={};payments.forEach(p=>{if(!paidMap[p.creditEntryId])paidMap[p.creditEntryId]=0;paidMap[p.creditEntryId]+=p.amount});let csv='Customer Name,Transaction Date,Original Amount,Paid Amount,Remaining Amount,Due Date,Status,Note\n';credits.forEach(cr=>{const cu=custMap[cr.customerId];const pd=paidMap[cr.id]||0;const rem=Math.max(0,cr.amount-pd);const st=rem<=0?'Paid':(pd>0?'Part Paid':'Pending');csv+=csvField(cu?cu.name:'')+','+csvField(cr.createdAt.substring(0,10))+','+cr.amount+','+pd+','+rem+','+csvField(cr.dueDate)+','+csvField(st)+','+csvField(cr.note||'')+'\n'});const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='udhaar-export-'+todayStr()+'.csv';a.click();URL.revokeObjectURL(url);showToast('CSV exported','success')}
+
+// ===== Bulk Upload =====
+let bulkUploadType='parties';
+function setBulkTab(tab,btn){bulkUploadType=tab;document.querySelectorAll('#bulkUploadModal .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('bulkPartiesSection').style.display=tab==='parties'?'block':'none';document.getElementById('bulkInventorySection').style.display=tab==='inventory'?'block':'none';document.getElementById('bulkUploadResult').innerHTML=''}
+function openBulkUploadModal(){bulkUploadType='parties';document.getElementById('bulkUploadResult').innerHTML='';openModal('bulkUploadModal');const tabs=document.querySelectorAll('#bulkUploadModal .tab-btn');tabs.forEach(t=>t.classList.remove('active'));tabs[0].classList.add('active');document.getElementById('bulkPartiesSection').style.display='block';document.getElementById('bulkInventorySection').style.display='none'}
+function startBulkUpload(type){bulkUploadType=type;document.getElementById('bulkUploadInput').accept='.csv';document.getElementById('bulkUploadInput').click()}
+function downloadPartiesTemplate(){const csv='Name,Mobile,DueAmount,DueDate,Note\nRamesh Kirana,9876543210,5000,2025-12-31,Pending bill\nSuresh Store,9988776655,3200,2025-11-15,Oil and flour\n';downloadCSVBlob(csv,'parties-template.csv')}
+function downloadInventoryTemplate(){const csv='ItemName,SalePrice,Unit,HSN,Stock\nCooking Oil 1L,180,bottle,1507,50\nWheat Flour 5kg,250,pack,1101,30\n';downloadCSVBlob(csv,'inventory-template.csv')}
+function downloadCSVBlob(csv,filename){const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)}
+
+async function handleBulkUpload(event){
+const file=event.target.files[0];event.target.value='';if(!file)return;
+const resEl=document.getElementById('bulkUploadResult');
+try{
+const text=await file.text();const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+if(lines.length<2){resEl.innerHTML='<p style="color:var(--danger)">File must have header + at least 1 row</p>';return}
+const rows=lines.slice(1).map(l=>parseCSVLine(l));
+const now=new Date().toISOString();let added=0,errors=0;
+if(bulkUploadType==='parties'){
+const dd=await getDefaultDueDays();
+for(const row of rows){
+const name=(row[0]||'').trim();const mobile=(row[1]||'').trim();const dueAmount=parseFloat(row[2])||0;const dueDate=(row[3]||'').trim()||addDays(todayStr(),dd);const note=(row[4]||'').trim();
+if(!name){errors++;continue}
+let customerId;const custs=await getAll('customers');const ex=custs.find(c=>c.name.toLowerCase()===name.toLowerCase());
+if(ex){customerId=ex.id;if(mobile&&ex.mobile!==mobile){ex.mobile=mobile;ex.updatedAt=now;await putItem('customers',ex)}}
+else{customerId=genId();await putItem('customers',{id:customerId,name,mobile,createdAt:now,updatedAt:now})}
+if(dueAmount>0){await putItem('credits',{id:genId(),customerId,amount:dueAmount,dueDate,note,createdAt:now,status:'pending'})}
+added++;
+}
+resEl.innerHTML=`<p style="color:var(--success)">✅ ${added} parties imported${errors?' ('+errors+' errors)':''}</p>`;
+}else{
+for(const row of rows){
+const name=(row[0]||'').trim();const price=parseFloat(row[1])||0;const unit=(row[2]||'pcs').trim();const hsn=(row[3]||'').trim();const stock=row[4]?parseInt(row[4]):null;
+if(!name){errors++;continue}
+const existingItems=await getAll('inventory');const ex=existingItems.find(i=>i.name.toLowerCase()===name.toLowerCase());
+if(ex){ex.salePrice=price||ex.salePrice;ex.unit=unit;ex.hsn=hsn||ex.hsn;if(stock!=null)ex.stock=stock;ex.updatedAt=now;await putItem('inventory',ex)}
+else{await putItem('inventory',{id:genId(),name,salePrice:price,unit,hsn,stock,createdAt:now,updatedAt:now})}
+added++;
+}
+resEl.innerHTML=`<p style="color:var(--success)">✅ ${added} items imported${errors?' ('+errors+' errors)':''}</p>`;
+}
+showToast('Bulk upload complete','success');
+if(currentView==='dashboard')loadDashboard();
+}catch(e){resEl.innerHTML=`<p style="color:var(--danger)">Error: ${e.message}</p>`}
+}
+
+function parseCSVLine(line){const result=[];let current='';let inQuotes=false;for(let i=0;i<line.length;i++){const ch=line[i];if(inQuotes){if(ch==='"'){if(i+1<line.length&&line[i+1]==='"'){current+='"';i++}else{inQuotes=false}}else{current+=ch}}else{if(ch==='"'){inQuotes=true}else if(ch===','){result.push(current);current=''}else{current+=ch}}}result.push(current);return result}
+
+// ===== Clear All =====
+async function clearAllData(){const ok1=await showConfirm('Clear All Data','This will permanently delete ALL data. Cannot be undone.','Delete Everything','btn-danger');if(!ok1)return;const ok2=await showConfirm('Final Confirmation','ARE YOU SURE? All data will be lost forever.','Yes, Delete All','btn-danger');if(!ok2)return;await clearStore('customers');await clearStore('credits');await clearStore('payments');try{await clearStore('inventory');await clearStore('bills')}catch(e){}showToast('All data cleared','success');switchView('dashboard')}
+
+// ===== Settings Load =====
+async function loadSettings(){try{const dd=await getById('settings','defaultDueDays');document.getElementById('defaultDueDaysDisplay').textContent=(dd?dd.value:'30')+' days';const cn=await getById('settings','companyName');if(cn&&cn.value)document.getElementById('appTitle').textContent='₹ '+cn.value}catch(e){}}
+
+// ===== Close modals on overlay =====
+document.querySelectorAll('.modal-overlay').forEach(ov=>{ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('active')})});
+document.addEventListener('click',e=>{if(!e.target.closest('#fCustName')&&!e.target.closest('#custAutocomplete'))document.getElementById('custAutocomplete').classList.remove('show');if(!e.target.closest('#billCustName')&&!e.target.closest('#billCustAC'))document.getElementById('billCustAC').classList.remove('show');if(!e.target.closest('#billInvSearch')&&!e.target.closest('#billInvAC'))document.getElementById('billInvAC').classList.remove('show')});
+
+// ===== Offline Service Worker via Blob (Zero 404s on Vercel) =====
+if('serviceWorker' in navigator){
+const swCode=`
+self.addEventListener('install',e=>self.skipWaiting());
+self.addEventListener('activate',e=>self.clients.claim());
+self.addEventListener('fetch',e=>{
+  e.respondWith(
+    fetch(e.request).catch(()=>caches.match(e.request).then(r=>r||caches.match('/')))
+  );
+});
+`;
+const blob=new Blob([swCode],{type:'application/javascript'});
+const url=URL.createObjectURL(blob);
+navigator.serviceWorker.register(url).catch(err=>console.log('SW registration:',err));
+}
+
+// ===== Init =====
+openDB().then(async()=>{
+loadDashboard();
+loadSettings();
+if('caches' in window){
+try{
+const cache=await caches.open('udhaar-single-v2');
+cache.put(new Request(location.href),new Response(document.documentElement.outerHTML,{headers:{'Content-Type':'text/html;charset=utf-8'}}));
+}catch(e){}
+}
+}).catch(e=>{document.getElementById('txList').innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Database Error</h3><p>'+e.message+'</p></div>'});
+</script>
+</body>
+</html>
